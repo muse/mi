@@ -1,6 +1,6 @@
 defmodule MiLexerTest do
   alias Mi.Lexer
-  alias Mi.Lexer.Token
+  alias Mi.Token
   use   ExUnit.Case
 
   describe "&Lexer.lex/1" do

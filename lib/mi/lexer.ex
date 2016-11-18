@@ -6,72 +6,12 @@ defmodule Mi.Lexer do
   eventually be used to generate Javascript.
   """
 
+  import Mi.Token, only: :macros
+
   alias Mi.Lexer
+  alias Mi.Token
 
   defstruct errors: [], tokens: [], line: 1, pos: 1
-
-  defmodule Token do
-    @moduledoc """
-    A token is a categorization of text to be used by the parser.
-    """
-    defstruct [:value, :type, :line, :pos]
-
-    @keywords [
-      'lambda',
-      'let',
-      'set',
-      'or',
-      'and',
-      'not',
-      'use',
-      'loop',  # for, while
-      'cond',  # if
-      'case',
-      'try',
-      'catch',
-      'throw',
-      'true',
-      'false',
-      'nil',
-    ]
-
-    def new(lexer, %{value: value, type: type}) do
-      %Token{
-        value: value,
-        type: type,
-        pos: lexer.pos,
-        line: lexer.line
-      }
-    end
-
-    @doc """
-    Check if a charlist is a keyword.
-
-    ## Example:
-      iex> Mi.Lexer.Token.keyword?('lambda')
-      true
-
-    """
-    def keyword?(value), do: value in @keywords
-  end
-
-  defmacrop is_whitespace(c) do
-    quote do: unquote(c) in [?\t, ?\s, ?\r]
-  end
-
-  defmacrop is_atom_literal(c) do
-    quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or
-      unquote(c) in [?_, ?-, ?+, ?-, ?*, ?/, ?%, ?^, ?@, ?!, ?&, ?|]
-  end
-
-  defmacrop is_numeric_literal(c) do
-    quote do: unquote(c) in ?0..?9 or unquote(c) === ?.
-  end
-
-  defmacrop is_identifier_literal(c) do
-    quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or
-      unquote(c) in [?_, ?-, ?@, ?/, ?!]
-  end
 
   defp lexer_error(lexer, message) do
     "#{lexer.line}:#{lexer.pos}: #{message}"
