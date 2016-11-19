@@ -44,7 +44,7 @@ defmodule Mi.Token do
     'nil',
   ]
 
-  def new(lexer, %{value: value, type: type}) do
+  def new(lexer, value, type) do
     %Token{
       value: value,
       type: type,

@@ -106,7 +106,7 @@ defmodule Mi.Lexer do
           {char, :error}
       end
 
-    token = Token.new(lexer, %{value: value, type: type})
+    token = Token.new(lexer, value, type)
 
     lex(rest, %{lexer |
       tokens: lexer.tokens ++ [token],
