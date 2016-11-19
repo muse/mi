@@ -13,7 +13,7 @@ defmodule Mi.Lexer do
 
   defstruct errors: [], tokens: [], line: 1, pos: 1
 
-  defp lexer_error(lexer, message) do
+  defp error(lexer, message) do
     "#{lexer.line}:#{lexer.pos}: #{message}"
   end
 
@@ -22,7 +22,14 @@ defmodule Mi.Lexer do
     lex_identifier(rest, acc ++ [char])
   end
   defp lex_identifier(expr, acc) do
-    {expr, acc}
+    type =
+      if Token.keyword?(acc) do
+        List.to_atom(acc)
+      else
+        :identifier
+      end
+
+    {:ok, expr, {acc, type}}
   end
 
   defp lex_string(expr, acc \\ '')
@@ -30,7 +37,7 @@ defmodule Mi.Lexer do
     lex_string(rest, acc ++ [?\\, char])
   end
   defp lex_string([char | rest], acc) when char === ?" do
-    {rest, acc}
+    {:ok, rest, {acc, :string}}
   end
   defp lex_string([char | rest], acc) do
     lex_string(rest, acc ++ [char])
@@ -41,7 +48,7 @@ defmodule Mi.Lexer do
     lex_number(rest, acc ++ [char])
   end
   defp lex_number(expr, acc) do
-    {expr, acc}
+    {:ok, expr, {acc, :number}}
   end
 
   defp lex_atom(expr, acc \\ '')
@@ -49,8 +56,22 @@ defmodule Mi.Lexer do
     lex_atom(rest, acc ++ [char])
   end
   defp lex_atom(expr, acc) do
-    {expr, acc}
+    {:ok, expr, {acc, :atom}}
   end
+
+  defp lex_symbol([?( = char | rest ]), do: {:ok, rest, {char, :oparen}}
+  defp lex_symbol([?) = char | rest ]), do: {:ok, rest, {char, :cparen}}
+  defp lex_symbol([?+ = char | rest ]), do: {:ok, rest, {char, :+}}
+  defp lex_symbol([?- = char | rest ]), do: {:ok, rest, {char, :-}}
+  defp lex_symbol([?/ = char | rest ]), do: {:ok, rest, {char, :/}}
+  defp lex_symbol([?* = char | rest ]), do: {:ok, rest, {char, :*}}
+  defp lex_symbol([?< = char | rest ]), do: {:ok, rest, {char, :<}}
+  defp lex_symbol([?> = char | rest ]), do: {:ok, rest, {char, :>}}
+  defp lex_symbol([?^ = char | rest ]), do: {:ok, rest, {char, :bxor}}
+  defp lex_symbol([?| = char | rest ]), do: {:ok, rest, {char, :bor}}
+  defp lex_symbol([?& = char | rest ]), do: {:ok, rest, {char, :band}}
+  defp lex_symbol([?' = char | rest ]), do: {:ok, rest, {char, :quote}}
+  defp lex_symbol([char | rest]), do: {:error, rest, {char, "unknown symbol #{char}"}}
 
   defp skip_comment([]), do: []
   defp skip_comment([?\n | _rest] = expr), do: expr
@@ -71,40 +92,23 @@ defmodule Mi.Lexer do
     lex(rest, %{lexer | pos: lexer.pos + 1})
   end
   defp lex([char | rest] = expr, lexer) do
-    {value, type} =
-      case char do
-        ?( -> {char, :oparen}
-        ?) -> {char, :cparen}
-        ?+ -> {char, :+}
-        ?- -> {char, :-}
-        ?/ -> {char, :/}
-        ?* -> {char, :*}
-        ?^ -> {char, :^}
-        ?& -> {char, :&}
-        ?| -> {char, :|}
-        ?' -> {char, :quote}
-        ?" ->
-          {rest, value} = lex_string(rest)
-          {value, :string}
-        ?: ->
-          {rest, value} = lex_atom(rest)
-          {value, :atom}
-        char when is_numeric_literal(char) ->
-          {rest, value} = lex_number(expr)
-          {value, :number}
-        char when is_identifier_literal(char) ->
-          {rest, value} = lex_identifier(expr)
-
-          if Token.keyword?(value) do
-            {value, List.to_atom(value)}
-          else
-            {value, :identifier}
-          end
-        _ ->
-          {char, :error}
+    {status, rest, result} =
+      cond do
+        is_numeric_literal(char) -> lex_number(expr)
+        is_identifier_literal(char) -> lex_identifier(expr)
+        char === ?" -> lex_string(rest)
+        char === ?: -> lex_atom(rest)
+        true ->        lex_symbol(expr)
       end
 
-    token = Token.new(lexer, value, type)
+    {lexer, token} =
+      case {status, result} do
+        {:ok, {value, type}} ->
+          {lexer, Token.new(lexer, value, type)}
+        {:error, {value, reason}} ->
+          new_lexer = %{lexer | errors: lexer.errors ++ [error(lexer, reason)]}
+          {new_lexer, Token.new(lexer, value, :error)}
+      end
 
     lex(rest, %{lexer |
       tokens: lexer.tokens ++ [token],
