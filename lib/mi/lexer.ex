@@ -18,9 +18,7 @@ defmodule Mi.Lexer do
   end
 
   defp lex_identifier(expr, acc \\ '')
-  defp lex_identifier([char | rest], acc)
-    when is_identifier_literal(char) or
-         is_numeric_literal(char) do
+  defp lex_identifier([char | rest], acc) when is_identifier_literal(char) do
     lex_identifier(rest, acc ++ [char])
   end
   defp lex_identifier(expr, acc) do
@@ -94,7 +92,7 @@ defmodule Mi.Lexer do
         char when is_numeric_literal(char) ->
           {rest, value} = lex_number(expr)
           {value, :number}
-        char when is_identifier_literal(char) and not is_numeric_literal(char) ->
+        char when is_identifier_literal(char) ->
           {rest, value} = lex_identifier(expr)
 
           if Token.keyword?(value) do

@@ -22,7 +22,7 @@ defmodule Mi.Token do
 
   defmacro is_identifier_literal(c) do
     quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or
-      unquote(c) in [?_, ?-, ?@, ?/, ?!]
+      unquote(c) in ?0..?9 or unquote(c) in [?_, ?-, ?@, ?/, ?!]
   end
 
   @keywords [
