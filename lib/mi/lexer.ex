@@ -88,8 +88,11 @@ defmodule Mi.Lexer do
   defp skip_comment([?\n | _rest] = expr), do: expr
   defp skip_comment([_char | rest]), do: skip_comment(rest)
 
+  def lex(%Lexer{expr: [], errors: []} = lexer) do
+    {:ok, %{lexer | tokens: Enum.reverse(lexer.tokens)}}
+  end
   def lex(%Lexer{expr: []} = lexer) do
-    %{lexer | tokens: Enum.reverse(lexer.tokens)}
+    {:error, %{lexer | tokens: Enum.reverse(lexer.tokens)}}
   end
   def lex(%Lexer{expr: [?\n | rest]} = lexer) do
     # Newline
