@@ -19,9 +19,10 @@ defmodule Mi.Lexer do
 
   defp lex_identifier(expr, acc \\ '')
   defp lex_identifier([char | rest], acc) when is_identifier_literal(char) do
-    lex_identifier(rest, acc ++ [char])
+    lex_identifier(rest, [char | acc])
   end
   defp lex_identifier(expr, acc) do
+    acc = Enum.reverse(acc)
     type =
       if Token.keyword?(acc) do
         List.to_atom(acc)
@@ -37,29 +38,29 @@ defmodule Mi.Lexer do
     {:error, [], {acc, error(lexer, "unterminated string")}}
   end
   defp lex_string(%Lexer{expr: [?\\, char | rest]} = lexer, acc) do
-    lex_string(%{lexer | expr: rest}, acc ++ [?\\, char])
+    lex_string(%{lexer | expr: rest}, [char, ?\\ | acc])
   end
   defp lex_string(%Lexer{expr: [char | rest]}, acc) when char === ?" do
-    {:ok, rest, {acc, :string}}
+    {:ok, rest, {Enum.reverse(acc), :string}}
   end
   defp lex_string(%Lexer{expr: [char | rest]} = lexer, acc) do
-    lex_string(%{lexer | expr: rest}, acc ++ [char])
+    lex_string(%{lexer | expr: rest}, [char | acc])
   end
 
   defp lex_number(expr, acc \\ '')
   defp lex_number([char | rest], acc) when is_numeric_literal(char) do
-    lex_number(rest, acc ++ [char])
+    lex_number(rest, [char | acc])
   end
   defp lex_number(expr, acc) do
-    {:ok, expr, {acc, :number}}
+    {:ok, expr, {Enum.reverse(acc), :number}}
   end
 
   defp lex_atom(expr, acc \\ '')
   defp lex_atom([char | rest], acc) when is_atom_literal(char) do
-    lex_atom(rest, acc ++ [char])
+    lex_atom(rest, [char | acc])
   end
   defp lex_atom(expr, acc) do
-    {:ok, expr, {acc, :atom}}
+    {:ok, expr, {Enum.reverse(acc), :atom}}
   end
 
   defp lex_symbol(lexer) do
@@ -87,7 +88,9 @@ defmodule Mi.Lexer do
   defp skip_comment([?\n | _rest] = expr), do: expr
   defp skip_comment([_char | rest]), do: skip_comment(rest)
 
-  def lex(%Lexer{expr: []} = lexer), do: lexer
+  def lex(%Lexer{expr: []} = lexer) do
+    %{lexer | tokens: Enum.reverse(lexer.tokens)}
+  end
   def lex(%Lexer{expr: [?\n | rest]} = lexer) do
     # Newline
     lex(%{lexer | expr: rest, line: lexer.line + 1, pos: 1})
@@ -121,7 +124,7 @@ defmodule Mi.Lexer do
 
     lex(%{lexer |
       expr: rest,
-      tokens: lexer.tokens ++ [token],
+      tokens: [token | lexer.tokens],
       pos: lexer.pos + (to_string([token.value]) |> String.length)
     })
   end
