@@ -26,7 +26,7 @@ defmodule Mi do
     #|> IO.inspect
 
     IO.inspect(@expression)
-    Lexer.lex("(#$)")
+    Lexer.lex(@expression)
     |> IO.inspect(limit: :infinity)
 
     # Lexer.lex("(')(')")

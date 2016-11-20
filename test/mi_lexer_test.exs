@@ -67,20 +67,20 @@ defmodule MiLexerTest do
       (let add (lambda (a b) (+ a b)))
       """)
 
-      assert [%Token{line: 1, pos: 1}, %Token{line: 1, pos: 3},
-              %Token{line: 1, pos: 5}, %Token{line: 1, pos: 9},
+      assert [%Token{line: 1, pos: 1}, %Token{line: 1, pos: 2},
+              %Token{line: 1, pos: 3}, %Token{line: 1, pos: 7},
+              %Token{line: 1, pos: 9}, %Token{line: 1, pos: 10},
               %Token{line: 1, pos: 11}, %Token{line: 1, pos: 13},
-              %Token{line: 1, pos: 15}, %Token{line: 1, pos: 17},
-              %Token{line: 1, pos: 19}, %Token{line: 1, pos: 20},
-              %Token{line: 1, pos: 22}, %Token{line: 2, pos: 1},
-              %Token{line: 2, pos: 3}, %Token{line: 2, pos: 7},
-              %Token{line: 2, pos: 11}, %Token{line: 2, pos: 13},
-              %Token{line: 2, pos: 20}, %Token{line: 2, pos: 22},
+              %Token{line: 1, pos: 15}, %Token{line: 1, pos: 16},
+              %Token{line: 1, pos: 17}, %Token{line: 2, pos: 1},
+              %Token{line: 2, pos: 2}, %Token{line: 2, pos: 6},
+              %Token{line: 2, pos: 10}, %Token{line: 2, pos: 11},
+              %Token{line: 2, pos: 18}, %Token{line: 2, pos: 19},
+              %Token{line: 2, pos: 21}, %Token{line: 2, pos: 22},
               %Token{line: 2, pos: 24}, %Token{line: 2, pos: 25},
-              %Token{line: 2, pos: 28}, %Token{line: 2, pos: 30},
-              %Token{line: 2, pos: 33}, %Token{line: 2, pos: 35},
-              %Token{line: 2, pos: 36}, %Token{line: 2, pos: 38},
-              %Token{line: 2, pos: 40}] = result.tokens
+              %Token{line: 2, pos: 27}, %Token{line: 2, pos: 29},
+              %Token{line: 2, pos: 30}, %Token{line: 2, pos: 31},
+              %Token{line: 2, pos: 32}] = result.tokens
     end
   end
 end
