@@ -32,15 +32,18 @@ defmodule Mi.Lexer do
     {:ok, expr, {acc, type}}
   end
 
-  defp lex_string(expr, acc \\ '')
-  defp lex_string([?\\, char | rest], acc) do
-    lex_string(rest, acc ++ [?\\, char])
+  defp lex_string(lexer, acc \\ '')
+  defp lex_string(%Lexer{expr: []} = lexer, acc) do
+    {:error, [], {acc, error(lexer, "unterminated string")}}
   end
-  defp lex_string([char | rest], acc) when char === ?" do
+  defp lex_string(%Lexer{expr: [?\\, char | rest]} = lexer, acc) do
+    lex_string(%{lexer | expr: rest}, acc ++ [?\\, char])
+  end
+  defp lex_string(%Lexer{expr: [char | rest]}, acc) when char === ?" do
     {:ok, rest, {acc, :string}}
   end
-  defp lex_string([char | rest], acc) do
-    lex_string(rest, acc ++ [char])
+  defp lex_string(%Lexer{expr: [char | rest]} = lexer, acc) do
+    lex_string(%{lexer | expr: rest}, acc ++ [char])
   end
 
   defp lex_number(expr, acc \\ '')
@@ -102,7 +105,7 @@ defmodule Mi.Lexer do
       cond do
         is_numeric_literal(char) -> lex_number(lexer.expr)
         is_identifier_literal(char) -> lex_identifier(lexer.expr)
-        char === ?" -> lex_string(rest)
+        char === ?" -> lex_string(%{lexer | expr: rest}) # Drop " off
         char === ?: -> lex_atom(rest)
         true ->        lex_symbol(lexer)
       end
