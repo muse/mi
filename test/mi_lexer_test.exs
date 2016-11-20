@@ -5,7 +5,10 @@ defmodule MiLexerTest do
 
   describe "&Lexer.lex/1" do
     test "Keywords are recognized" do
-      result = Lexer.lex("lambda let set or and not use loop cond case try catch throw true false nil")
+      result = Lexer.lex("""
+      lambda let set or and not use loop cond case try catch throw true false
+      nil
+      """)
       assert [%Token{type: :lambda, value: 'lambda'},
               %Token{type: :let, value: 'let'},
               %Token{type: :set, value: 'set'},
@@ -25,7 +28,10 @@ defmodule MiLexerTest do
     end
 
     test "Keywords aren't recognized when part of a longer identifier" do
-      result = Lexer.lex("lambda- let- set- orw and/ nott used loopp cond- case- tryy catchh throww truee falsey nill")
+      result = Lexer.lex("""
+      lambda- let- set- orw and/ nott used loopp cond- case- tryy catchh throww
+      truee falsey nill
+      """)
       Enum.map(result.tokens, fn(token) -> assert token.type === :identifier end)
     end
 
@@ -35,8 +41,18 @@ defmodule MiLexerTest do
               %Token{type: :string, value: ~c(I'm a seperate string!)}] = result.tokens
     end
 
+    test "Unterminated strings error" do
+      result = Lexer.lex(~s("I'm an unterminated \\"string\\" over
+      multiple lines))
+
+      assert result.errors !== []
+      assert hd(result.errors) === "1:1: unterminated string"
+    end
+
     test "Identifier literals are recognized and read properly" do
-      result = Lexer.lex("console/log document/write an-identifier20 @global b2-2")
+      result = Lexer.lex("""
+      console/log document/write an-identifier20 @global b2-2 simpleident x y z
+      """)
 
       Enum.map(result.tokens, fn(token) -> assert token.type === :identifier end)
     end
