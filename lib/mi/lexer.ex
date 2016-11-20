@@ -40,7 +40,7 @@ defmodule Mi.Lexer do
   defp lex_string(%Lexer{expr: [?\\, char | rest]} = lexer, acc) do
     lex_string(%{lexer | expr: rest}, [char, ?\\ | acc])
   end
-  defp lex_string(%Lexer{expr: [char | rest]}, acc) when char === ?" do
+  defp lex_string(%Lexer{expr: [?" | rest]}, acc) do
     {:ok, rest, {Enum.reverse(acc), :string}}
   end
   defp lex_string(%Lexer{expr: [char | rest]} = lexer, acc) do
