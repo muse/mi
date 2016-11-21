@@ -1,9 +1,9 @@
 defmodule Mi.Lexer do
   @moduledoc """
-  This lexer module converts a sequence of characters into a sequence of
-  tokens, removing unnecessary whitespace while doing so. These tokens will later
-  be passed to the parser to create an abstract syntax tree which will
-  eventually be used to generate Javascript.
+  The lexer converts a sequence of characters into a sequence of tokens,
+  removing unnecessary whitespace while doing so. These tokens will later be
+  passed to the parser to create an abstract syntax tree which will eventually
+  be used to generate Javascript.
   """
 
   import Mi.Token, only: :macros
