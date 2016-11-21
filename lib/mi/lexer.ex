@@ -11,7 +11,7 @@ defmodule Mi.Lexer do
   alias Mi.Lexer
   alias Mi.Token
 
-  defstruct errors: [], tokens: [], line: 1, pos: 1, expr: ''
+  defstruct tokens: [], line: 1, pos: 1, expr: ''
 
   @typep token_result :: {atom, charlist, {charlist, atom}}
 
@@ -38,18 +38,18 @@ defmodule Mi.Lexer do
   end
 
   @spec lex_identifier(charlist, charlist) :: token_result
-  defp lex_string(lexer, acc \\ '')
-  defp lex_string(%Lexer{expr: []} = lexer, acc) do
-    {:error, [], {acc, error(lexer, "unterminated string")}}
+  defp lex_string(expr, acc \\ '')
+  defp lex_string([], _acc) do
+    {:error, nil, "unterminated string"}
   end
-  defp lex_string(%Lexer{expr: [?\\, char | rest]} = lexer, acc) do
-    lex_string(%{lexer | expr: rest}, [char, ?\\ | acc])
+  defp lex_string([?\\, char | rest], acc) do
+    lex_string(rest, [char, ?\\ | acc])
   end
-  defp lex_string(%Lexer{expr: [?" | rest]}, acc) do
+  defp lex_string([?" | rest], acc) do
     {:ok, rest, {Enum.reverse(acc), :string}}
   end
-  defp lex_string(%Lexer{expr: [char | rest]} = lexer, acc) do
-    lex_string(%{lexer | expr: rest}, [char | acc])
+  defp lex_string([char | rest], acc) do
+    lex_string(rest, [char | acc])
   end
 
   @spec lex_number(charlist, charlist) :: token_result
@@ -70,9 +70,9 @@ defmodule Mi.Lexer do
     {:ok, expr, {Enum.reverse(acc), :atom}}
   end
 
-  @spec lex_symbol(%Lexer{}) :: token_result
-  defp lex_symbol(lexer) do
-    case lexer.expr do
+  @spec lex_symbol(charlist) :: token_result
+  defp lex_symbol(expr) do
+    case expr do
       [?( = char | rest] -> {:ok, rest, {char, :oparen}}
       [?) = char | rest] -> {:ok, rest, {char, :cparen}}
       [?+ = char | rest] -> {:ok, rest, {char, :+}}
@@ -87,8 +87,8 @@ defmodule Mi.Lexer do
       [?| = char | rest] -> {:ok, rest, {char, :bor}}
       [?& = char | rest] -> {:ok, rest, {char, :band}}
       [?' = char | rest] -> {:ok, rest, {char, :quote}}
-      [char | rest] ->
-        {:error, rest, {char, error(lexer, "unknown symbol `#{[char]}'")}}
+      [char | _rest] ->
+        {:error, nil, "unexpected token `#{[char]}'"}
     end
   end
 
@@ -99,11 +99,8 @@ defmodule Mi.Lexer do
 
   @spec lex(String.t) :: %Lexer{}
   @spec lex(%Lexer{}) :: %Lexer{}
-  def lex(%Lexer{expr: [], errors: []} = lexer) do
-    {:ok, %{lexer | tokens: Enum.reverse(lexer.tokens)}}
-  end
   def lex(%Lexer{expr: []} = lexer) do
-    {:error, %{lexer | tokens: Enum.reverse(lexer.tokens)}}
+    {:ok, %{lexer | tokens: Enum.reverse(lexer.tokens)}}
   end
   def lex(%Lexer{expr: [?\n | rest]} = lexer) do
     # Newline
@@ -122,25 +119,22 @@ defmodule Mi.Lexer do
       cond do
         is_numeric_literal(char) -> lex_number(lexer.expr)
         is_identifier_literal(char) -> lex_identifier(lexer.expr)
-        char === ?" -> lex_string(%{lexer | expr: rest}) # Drop " off
+        char === ?" -> lex_string(rest) # Drop " off
         char === ?: -> lex_atom(rest)
-        true ->        lex_symbol(lexer)
+        true ->        lex_symbol(lexer.expr)
       end
 
-    {lexer, token} =
-      case {status, result} do
-        {:ok, {value, type}} ->
-          {lexer, Token.new(lexer, value, type)}
-        {:error, {value, error}} ->
-          new_lexer = %{lexer | errors: lexer.errors ++ [error]}
-          {new_lexer, Token.new(lexer, value, :error)}
-      end
-
-    lex(%{lexer |
-      expr: rest,
-      tokens: [token | lexer.tokens],
-      pos: lexer.pos + (to_string([token.value]) |> String.length)
-    })
+    case {status, result} do
+      {:ok, {value, type}} ->
+        token = Token.new(lexer, value, type)
+        lex(%{lexer |
+              expr: rest,
+              tokens: [token | lexer.tokens],
+              pos: lexer.pos + (to_string([token.value]) |> String.length)
+            })
+      {:error, reason} ->
+        {:error, error(lexer, reason)}
+    end
   end
   def lex(expr), do: lex(%Lexer{expr: to_charlist(expr)})
 end

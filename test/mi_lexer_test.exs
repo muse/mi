@@ -43,11 +43,10 @@ defmodule MiLexerTest do
     end
 
     test "Unterminated strings error" do
-      {:error, result} = Lexer.lex(~s("I'm an unterminated \\"string\\" over
+      {:error, reason} = Lexer.lex(~s("I'm an unterminated \\"string\\" over
       multiple lines))
 
-      assert result.errors !== []
-      assert hd(result.errors) === "1:1: unterminated string"
+      assert reason === "1:1: unterminated string"
     end
 
     test "Identifier literals are recognized and read properly" do
