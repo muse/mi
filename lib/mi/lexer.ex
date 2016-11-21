@@ -13,10 +13,14 @@ defmodule Mi.Lexer do
 
   defstruct errors: [], tokens: [], line: 1, pos: 1, expr: ''
 
+  @typep token_result :: {atom, charlist, {charlist, atom}}
+
+  @spec error(%Lexer{}, String.t) :: String.t
   defp error(lexer, message) do
     "#{lexer.line}:#{lexer.pos}: #{message}"
   end
 
+  @spec lex_identifier(charlist, charlist) :: token_result
   defp lex_identifier(expr, acc \\ '')
   defp lex_identifier([char | rest], acc) when is_identifier_literal(char) do
     lex_identifier(rest, [char | acc])
@@ -33,6 +37,7 @@ defmodule Mi.Lexer do
     {:ok, expr, {acc, type}}
   end
 
+  @spec lex_identifier(charlist, charlist) :: token_result
   defp lex_string(lexer, acc \\ '')
   defp lex_string(%Lexer{expr: []} = lexer, acc) do
     {:error, [], {acc, error(lexer, "unterminated string")}}
@@ -47,6 +52,7 @@ defmodule Mi.Lexer do
     lex_string(%{lexer | expr: rest}, [char | acc])
   end
 
+  @spec lex_number(charlist, charlist) :: token_result
   defp lex_number(expr, acc \\ '')
   defp lex_number([char | rest], acc) when is_numeric_literal(char) do
     lex_number(rest, [char | acc])
@@ -55,6 +61,7 @@ defmodule Mi.Lexer do
     {:ok, expr, {Enum.reverse(acc), :number}}
   end
 
+  @spec lex_atom(charlist, charlist) :: token_result
   defp lex_atom(expr, acc \\ '')
   defp lex_atom([char | rest], acc) when is_atom_literal(char) do
     lex_atom(rest, [char | acc])
@@ -63,6 +70,7 @@ defmodule Mi.Lexer do
     {:ok, expr, {Enum.reverse(acc), :atom}}
   end
 
+  @spec lex_symbol(%Lexer{}) :: token_result
   defp lex_symbol(lexer) do
     case lexer.expr do
       [?( = char | rest] -> {:ok, rest, {char, :oparen}}
@@ -84,10 +92,13 @@ defmodule Mi.Lexer do
     end
   end
 
+  @spec skip_comment(charlist) :: charlist
   defp skip_comment([]), do: []
   defp skip_comment([?\n | _rest] = expr), do: expr
   defp skip_comment([_char | rest]), do: skip_comment(rest)
 
+  @spec lex(String.t) :: %Lexer{}
+  @spec lex(%Lexer{}) :: %Lexer{}
   def lex(%Lexer{expr: [], errors: []} = lexer) do
     {:ok, %{lexer | tokens: Enum.reverse(lexer.tokens)}}
   end
