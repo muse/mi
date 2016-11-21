@@ -5,7 +5,7 @@ defmodule MiLexerTest do
 
   describe "&Lexer.lex/1" do
     test "Keywords are recognized" do
-      result = Lexer.lex("""
+      {:ok, result} = Lexer.lex("""
       lambda let set or and not use loop cond case try catch throw true false
       nil
       """)
@@ -28,7 +28,7 @@ defmodule MiLexerTest do
     end
 
     test "Keywords aren't recognized when part of a longer identifier" do
-      result = Lexer.lex("""
+      {:ok, result} = Lexer.lex("""
       lambda- let- set- orw and/ nott used loopp cond- case- tryy catchh throww
       truee falsey nill
       """)
@@ -36,13 +36,14 @@ defmodule MiLexerTest do
     end
 
     test "String literals are recognized and read properly" do
-      result = Lexer.lex(~s("I'm a \\"string\\"" "I'm a seperate string!"))
-      assert [%Token{type: :string, value: ~c(I'm a \\"string\\")},
+      {:ok, result} = Lexer.lex(~s("I'm Å \\"string\\"" "I'm a seperate string!"))
+
+      assert [%Token{type: :string, value: ~c(I'm Å \\"string\\")},
               %Token{type: :string, value: ~c(I'm a seperate string!)}] = result.tokens
     end
 
     test "Unterminated strings error" do
-      result = Lexer.lex(~s("I'm an unterminated \\"string\\" over
+      {:error, result} = Lexer.lex(~s("I'm an unterminated \\"string\\" over
       multiple lines))
 
       assert result.errors !== []
@@ -50,7 +51,7 @@ defmodule MiLexerTest do
     end
 
     test "Identifier literals are recognized and read properly" do
-      result = Lexer.lex("""
+      {:ok, result} = Lexer.lex("""
       console/log document/write an-identifier20 @global b2-2 simpleident x y z
       """)
 
@@ -58,7 +59,7 @@ defmodule MiLexerTest do
     end
 
     test "Comments are skipped" do
-      result_a = Lexer.lex("""
+      {:ok, result_a} = Lexer.lex("""
       (set x 10) ; Insightful comment
       (* @x/n @x/m)
       """)
@@ -73,12 +74,12 @@ defmodule MiLexerTest do
               %Token{type: :identifier},
               %Token{type: :cparen}] = result_a.tokens
 
-      result_b = Lexer.lex("; Some other important comment")
+      {:ok, result_b} = Lexer.lex("; Some other important comment")
       assert result_b.tokens === []
     end
 
     test "Line and character numbers are tracked" do
-      result = Lexer.lex("""
+      {:ok, result} = Lexer.lex("""
       ((let z '(1 2 3))
       (let add (lambda (a b) (+ a b)))
       """)
