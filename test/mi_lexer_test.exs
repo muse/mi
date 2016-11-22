@@ -82,20 +82,20 @@ defmodule MiLexerTest do
        (define add (lambda (a b) (+ a b)))
       """)
 
-      [%Mi.Token{line: 1, pos: 1}, %Mi.Token{line: 1, pos: 2},
-       %Mi.Token{line: 1, pos: 3}, %Mi.Token{line: 1, pos: 10},
-       %Mi.Token{line: 1, pos: 12}, %Mi.Token{line: 1, pos: 13},
-       %Mi.Token{line: 1, pos: 14}, %Mi.Token{line: 1, pos: 16},
-       %Mi.Token{line: 1, pos: 18}, %Mi.Token{line: 1, pos: 19},
-       %Mi.Token{line: 1, pos: 20}, %Mi.Token{line: 2, pos: 2},
-       %Mi.Token{line: 2, pos: 3}, %Mi.Token{line: 2, pos: 10},
-       %Mi.Token{line: 2, pos: 14}, %Mi.Token{line: 2, pos: 15},
-       %Mi.Token{line: 2, pos: 22}, %Mi.Token{line: 2, pos: 23},
-       %Mi.Token{line: 2, pos: 25}, %Mi.Token{line: 2, pos: 26},
-       %Mi.Token{line: 2, pos: 28}, %Mi.Token{line: 2, pos: 29},
-       %Mi.Token{line: 2, pos: 31}, %Mi.Token{line: 2, pos: 33},
-       %Mi.Token{line: 2, pos: 34}, %Mi.Token{line: 2, pos: 35},
-       %Mi.Token{line: 2, pos: 36}] = tokens
+      [%Token{line: 1, pos: 1}, %Token{line: 1, pos: 2},
+       %Token{line: 1, pos: 3}, %Token{line: 1, pos: 10},
+       %Token{line: 1, pos: 12}, %Token{line: 1, pos: 13},
+       %Token{line: 1, pos: 14}, %Token{line: 1, pos: 16},
+       %Token{line: 1, pos: 18}, %Token{line: 1, pos: 19},
+       %Token{line: 1, pos: 20}, %Token{line: 2, pos: 2},
+       %Token{line: 2, pos: 3}, %Token{line: 2, pos: 10},
+       %Token{line: 2, pos: 14}, %Token{line: 2, pos: 15},
+       %Token{line: 2, pos: 22}, %Token{line: 2, pos: 23},
+       %Token{line: 2, pos: 25}, %Token{line: 2, pos: 26},
+       %Token{line: 2, pos: 28}, %Token{line: 2, pos: 29},
+       %Token{line: 2, pos: 31}, %Token{line: 2, pos: 33},
+       %Token{line: 2, pos: 34}, %Token{line: 2, pos: 35},
+       %Token{line: 2, pos: 36}] = tokens
     end
   end
 end
