@@ -6,12 +6,11 @@ defmodule MiLexerTest do
   describe "&Lexer.lex/1" do
     test "Keywords are recognized" do
       {:ok, result} = Lexer.lex("""
-      lambda let set or and not use loop cond case try catch throw true false
+      lambda define or and not use loop cond case try catch throw true false
       nil
       """)
       assert [%Token{type: :lambda, value: 'lambda'},
-              %Token{type: :let, value: 'let'},
-              %Token{type: :set, value: 'set'},
+              %Token{type: :define, value: 'define'},
               %Token{type: :or, value: 'or'},
               %Token{type: :and, value: 'and'},
               %Token{type: :not, value: 'not'},
@@ -29,7 +28,7 @@ defmodule MiLexerTest do
 
     test "Keywords aren't recognized when part of a longer identifier" do
       {:ok, result} = Lexer.lex("""
-      lambda- let- set- orw and/ nott used loopp cond- case- tryy catchh throww
+      lambda- definee orw and/ nott used loopp cond- case- tryy catchh throww
       truee falsey nill
       """)
       Enum.map(result.tokens, fn(token) -> assert token.type === :identifier end)
@@ -59,11 +58,11 @@ defmodule MiLexerTest do
 
     test "Comments are skipped" do
       {:ok, result_a} = Lexer.lex("""
-      (set x 10) ; Insightful comment
+      (define x 10) ; Insightful comment
       (* @x/n @x/m)
       """)
       assert [%Token{type: :oparen},
-              %Token{type: :set},
+              %Token{type: :define},
               %Token{type: :identifier},
               %Token{type: :number},
               %Token{type: :cparen},
@@ -79,24 +78,24 @@ defmodule MiLexerTest do
 
     test "Line and character numbers are tracked" do
       {:ok, result} = Lexer.lex("""
-      ((let z '(1 2 3))
-      (let add (lambda (a b) (+ a b)))
+      ((define z '(1 2 3))
+      (define add (lambda (a b) (+ a b)))
       """)
 
-      assert [%Token{line: 1, pos: 1}, %Token{line: 1, pos: 2},
-              %Token{line: 1, pos: 3}, %Token{line: 1, pos: 7},
-              %Token{line: 1, pos: 9}, %Token{line: 1, pos: 10},
-              %Token{line: 1, pos: 11}, %Token{line: 1, pos: 13},
-              %Token{line: 1, pos: 15}, %Token{line: 1, pos: 16},
-              %Token{line: 1, pos: 17}, %Token{line: 2, pos: 1},
-              %Token{line: 2, pos: 2}, %Token{line: 2, pos: 6},
-              %Token{line: 2, pos: 10}, %Token{line: 2, pos: 11},
-              %Token{line: 2, pos: 18}, %Token{line: 2, pos: 19},
-              %Token{line: 2, pos: 21}, %Token{line: 2, pos: 22},
-              %Token{line: 2, pos: 24}, %Token{line: 2, pos: 25},
-              %Token{line: 2, pos: 27}, %Token{line: 2, pos: 29},
-              %Token{line: 2, pos: 30}, %Token{line: 2, pos: 31},
-              %Token{line: 2, pos: 32}] = result.tokens
+      [%Mi.Token{line: 1, pos: 1}, %Mi.Token{line: 1, pos: 2},
+       %Mi.Token{line: 1, pos: 3}, %Mi.Token{line: 1, pos: 10},
+       %Mi.Token{line: 1, pos: 12}, %Mi.Token{line: 1, pos: 13},
+       %Mi.Token{line: 1, pos: 14}, %Mi.Token{line: 1, pos: 16},
+       %Mi.Token{line: 1, pos: 18}, %Mi.Token{line: 1, pos: 19},
+       %Mi.Token{line: 1, pos: 20}, %Mi.Token{line: 2, pos: 1},
+       %Mi.Token{line: 2, pos: 2}, %Mi.Token{line: 2, pos: 9},
+       %Mi.Token{line: 2, pos: 13}, %Mi.Token{line: 2, pos: 14},
+       %Mi.Token{line: 2, pos: 21}, %Mi.Token{line: 2, pos: 22},
+       %Mi.Token{line: 2, pos: 24}, %Mi.Token{line: 2, pos: 25},
+       %Mi.Token{line: 2, pos: 27}, %Mi.Token{line: 2, pos: 28},
+       %Mi.Token{line: 2, pos: 30}, %Mi.Token{line: 2, pos: 32},
+       %Mi.Token{line: 2, pos: 33}, %Mi.Token{line: 2, pos: 34},
+       %Mi.Token{line: 2, pos: 35}] = result.tokens
     end
   end
 end

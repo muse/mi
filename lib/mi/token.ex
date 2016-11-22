@@ -35,8 +35,7 @@ defmodule Mi.Token do
 
   @keywords [
     'lambda',
-    'let',
-    'set',
+    'define',
     'or',
     'and',
     'not',
