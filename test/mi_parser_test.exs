@@ -6,8 +6,12 @@ defmodule MiParserTest do
     test "Expressions are parsed" do
       {:ok, tokens} = Lexer.lex("(+ 1 (* 5 5))")
       assert Parser.parse(tokens) ===
-        [%AST.Expression{operator: :+, lhs: 1,
-                         rhs: %AST.Expression{operator: :*, lhs: 5, rhs: 5}}]
+        [%AST.Expression{
+           operator: :+,
+           lhs: %AST.Number{value: '1'},
+           rhs: %AST.Expression{operator: :*,
+                                lhs: %AST.Number{value: '5'},
+                                rhs: %AST.Number{value: '5'}}}]
     end
   end
 end

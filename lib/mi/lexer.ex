@@ -12,12 +12,19 @@ defmodule Mi.Lexer do
 
   defstruct tokens: [], line: 1, pos: 1, expr: ''
 
+  @typep t :: %__MODULE__{
+    tokens: [Token.t],
+    line: pos_integer,
+    pos: pos_integer,
+    expr: charlist
+  }
+
   @typep token_result :: {:ok, {charlist, charlist, Token.type}}
   @typep token_error :: {:error, String.t}
 
   @typep lexer_result :: {:ok, [Token.t]} | {:error, String.t}
 
-  @spec error(%Lexer{}, String.t) :: String.t
+  @spec error(Lexer.t, String.t) :: String.t
   defp error(lexer, message) do
     "#{lexer.line}:#{lexer.pos}: #{message}"
   end
@@ -85,6 +92,7 @@ defmodule Mi.Lexer do
       [?>, ?> | rest]    -> {:ok, {rest, {'>>', :bshiftr}}}
       [?< = char | rest] -> {:ok, {rest, {char, :<}}}
       [?> = char | rest] -> {:ok, {rest, {char, :>}}}
+      [?~ = char | rest] -> {:ok, {rest, {char, :bnot}}}
       [?^ = char | rest] -> {:ok, {rest, {char, :bxor}}}
       [?| = char | rest] -> {:ok, {rest, {char, :bor}}}
       [?& = char | rest] -> {:ok, {rest, {char, :band}}}
@@ -102,7 +110,7 @@ defmodule Mi.Lexer do
   @spec lex(String.t) :: lexer_result
   def lex(expr), do: do_lex(%Lexer{expr: to_charlist(expr)})
 
-  @spec do_lex(%Lexer{}) :: lexer_result
+  @spec do_lex(Lexer.t) :: lexer_result
   defp do_lex(%Lexer{expr: []} = lexer) do
     {:ok, Enum.reverse(lexer.tokens)}
   end
