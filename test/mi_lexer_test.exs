@@ -79,7 +79,7 @@ defmodule MiLexerTest do
     test "Line and character numbers are tracked" do
       {:ok, tokens} = Lexer.lex("""
       ((define z '(1 2 3))
-      (define add (lambda (a b) (+ a b)))
+       (define add (lambda (a b) (+ a b)))
       """)
 
       [%Mi.Token{line: 1, pos: 1}, %Mi.Token{line: 1, pos: 2},
@@ -87,15 +87,15 @@ defmodule MiLexerTest do
        %Mi.Token{line: 1, pos: 12}, %Mi.Token{line: 1, pos: 13},
        %Mi.Token{line: 1, pos: 14}, %Mi.Token{line: 1, pos: 16},
        %Mi.Token{line: 1, pos: 18}, %Mi.Token{line: 1, pos: 19},
-       %Mi.Token{line: 1, pos: 20}, %Mi.Token{line: 2, pos: 1},
-       %Mi.Token{line: 2, pos: 2}, %Mi.Token{line: 2, pos: 9},
-       %Mi.Token{line: 2, pos: 13}, %Mi.Token{line: 2, pos: 14},
-       %Mi.Token{line: 2, pos: 21}, %Mi.Token{line: 2, pos: 22},
-       %Mi.Token{line: 2, pos: 24}, %Mi.Token{line: 2, pos: 25},
-       %Mi.Token{line: 2, pos: 27}, %Mi.Token{line: 2, pos: 28},
-       %Mi.Token{line: 2, pos: 30}, %Mi.Token{line: 2, pos: 32},
-       %Mi.Token{line: 2, pos: 33}, %Mi.Token{line: 2, pos: 34},
-       %Mi.Token{line: 2, pos: 35}] = tokens
+       %Mi.Token{line: 1, pos: 20}, %Mi.Token{line: 2, pos: 2},
+       %Mi.Token{line: 2, pos: 3}, %Mi.Token{line: 2, pos: 10},
+       %Mi.Token{line: 2, pos: 14}, %Mi.Token{line: 2, pos: 15},
+       %Mi.Token{line: 2, pos: 22}, %Mi.Token{line: 2, pos: 23},
+       %Mi.Token{line: 2, pos: 25}, %Mi.Token{line: 2, pos: 26},
+       %Mi.Token{line: 2, pos: 28}, %Mi.Token{line: 2, pos: 29},
+       %Mi.Token{line: 2, pos: 31}, %Mi.Token{line: 2, pos: 33},
+       %Mi.Token{line: 2, pos: 34}, %Mi.Token{line: 2, pos: 35},
+       %Mi.Token{line: 2, pos: 36}] = tokens
     end
   end
 end
