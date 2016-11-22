@@ -12,8 +12,8 @@ defmodule Mi do
 
     tokens =
       case Lexer.lex(input) do
+        {:ok, tokens} -> tokens
         {:error, reason} -> fatal_error("lexer", reason)
-        {:ok, lexer}     -> lexer.tokens
       end
 
     IO.inspect tokens

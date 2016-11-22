@@ -5,11 +5,20 @@ defmodule Mi.Token do
 
   alias Mi.Token
 
+  defstruct [:value, :type, :line, :pos]
+
+  @type type :: atom
+
+  @type t :: %__MODULE__{
+    value: charlist,
+    type: type,
+    line: pos_integer,
+    pos: pos_integer
+  }
+
   defimpl String.Chars, for: Token do
     def to_string(token), do: "#{token.value}"
   end
-
-  defstruct [:value, :type, :line, :pos]
 
   defmacro is_whitespace(c) do
     quote do: unquote(c) in [?\t, ?\s, ?\r]
@@ -51,7 +60,7 @@ defmodule Mi.Token do
     'nil',
   ]
 
-  @spec new(%{pos: pos_integer, line: pos_integer}, charlist, atom) :: %Token{}
+  @spec new(%{pos: pos_integer, line: pos_integer}, charlist, type) :: Token.t
   def new(%{pos: pos, line: line}, value, type) do
     %Token{
       value: value,
