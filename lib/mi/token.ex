@@ -44,12 +44,13 @@ defmodule Mi.Token do
     'nil',
   ]
 
-  def new(lexer, value, type) do
+  @spec new(%{pos: pos_integer, line: pos_integer}, charlist, atom) :: %Token{}
+  def new(%{pos: pos, line: line}, value, type) do
     %Token{
       value: value,
       type: type,
-      pos: lexer.pos,
-      line: lexer.line
+      pos: pos,
+      line: line
     }
   end
 
@@ -61,5 +62,6 @@ defmodule Mi.Token do
   true
 
   """
+  @spec keyword?(charlist) :: bool
   def keyword?(value), do: value in @keywords
 end
