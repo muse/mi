@@ -103,7 +103,7 @@ defmodule Mi.Lexer do
   @spec lex(String.t) :: %Lexer{}
   @spec lex(%Lexer{}) :: %Lexer{}
   def lex(%Lexer{expr: []} = lexer) do
-    {:ok, %{lexer | tokens: Enum.reverse(lexer.tokens)}}
+    {:ok, Enum.reverse(lexer.tokens)}
   end
   def lex(%Lexer{expr: [?\n | rest]} = lexer) do
     # Newline

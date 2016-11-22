@@ -5,7 +5,7 @@ defmodule MiLexerTest do
 
   describe "&Lexer.lex/1" do
     test "Keywords are recognized" do
-      {:ok, result} = Lexer.lex("""
+      {:ok, tokens} = Lexer.lex("""
       lambda define or and not use loop cond case try catch throw true false
       nil
       """)
@@ -23,22 +23,22 @@ defmodule MiLexerTest do
               %Token{type: :throw, value: 'throw'},
               %Token{type: :true, value: 'true'},
               %Token{type: :false, value: 'false'},
-              %Token{type: :nil, value: 'nil'}] = result.tokens
+              %Token{type: :nil, value: 'nil'}] = tokens
     end
 
     test "Keywords aren't recognized when part of a longer identifier" do
-      {:ok, result} = Lexer.lex("""
+      {:ok, tokens} = Lexer.lex("""
       lambda- definee orw and/ nott used loopp cond- case- tryy catchh throww
       truee falsey nill
       """)
-      Enum.map(result.tokens, fn(token) -> assert token.type === :identifier end)
+      Enum.map(tokens, fn(token) -> assert token.type === :identifier end)
     end
 
     test "String literals are recognized and read properly" do
-      {:ok, result} = Lexer.lex(~s("I'm Å \\"string\\"" "I'm a seperate string!"))
+      {:ok, tokens} = Lexer.lex(~s("I'm Å \\"string\\"" "I'm a seperate string!"))
 
       assert [%Token{type: :string, value: ~c(I'm Å \\"string\\")},
-              %Token{type: :string, value: ~c(I'm a seperate string!)}] = result.tokens
+              %Token{type: :string, value: ~c(I'm a seperate string!)}] = tokens
     end
 
     test "Unterminated strings error" do
@@ -49,15 +49,15 @@ defmodule MiLexerTest do
     end
 
     test "Identifier literals are recognized and read properly" do
-      {:ok, result} = Lexer.lex("""
+      {:ok, tokens} = Lexer.lex("""
       console/log document/write an-identifier20 @global b2-2 simpleident x y z
       """)
 
-      Enum.map(result.tokens, fn(token) -> assert token.type === :identifier end)
+      Enum.map(tokens, fn(token) -> assert token.type === :identifier end)
     end
 
     test "Comments are skipped" do
-      {:ok, result_a} = Lexer.lex("""
+      {:ok, tokens_a} = Lexer.lex("""
       (define x 10) ; Insightful comment
       (* @x/n @x/m)
       """)
@@ -70,14 +70,14 @@ defmodule MiLexerTest do
               %Token{type: :*},
               %Token{type: :identifier},
               %Token{type: :identifier},
-              %Token{type: :cparen}] = result_a.tokens
+              %Token{type: :cparen}] = tokens_a
 
-      {:ok, result_b} = Lexer.lex("; Some other important comment")
-      assert result_b.tokens === []
+      {:ok, tokens_b} = Lexer.lex("; Some other important comment")
+      assert tokens_b === []
     end
 
     test "Line and character numbers are tracked" do
-      {:ok, result} = Lexer.lex("""
+      {:ok, tokens} = Lexer.lex("""
       ((define z '(1 2 3))
       (define add (lambda (a b) (+ a b)))
       """)
@@ -95,7 +95,7 @@ defmodule MiLexerTest do
        %Mi.Token{line: 2, pos: 27}, %Mi.Token{line: 2, pos: 28},
        %Mi.Token{line: 2, pos: 30}, %Mi.Token{line: 2, pos: 32},
        %Mi.Token{line: 2, pos: 33}, %Mi.Token{line: 2, pos: 34},
-       %Mi.Token{line: 2, pos: 35}] = result.tokens
+       %Mi.Token{line: 2, pos: 35}] = tokens
     end
   end
 end
