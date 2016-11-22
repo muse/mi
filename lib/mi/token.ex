@@ -5,6 +5,10 @@ defmodule Mi.Token do
 
   alias Mi.Token
 
+  defimpl String.Chars, for: Token do
+    def to_string(token), do: "#{token.value}"
+  end
+
   defstruct [:value, :type, :line, :pos]
 
   defmacro is_whitespace(c) do
