@@ -118,8 +118,8 @@ defmodule Mi.Lexer do
     {status, rest, result} =
       cond do
         is_numeric_literal(char) -> lex_number(lexer.expr)
-        is_identifier_literal(char) -> lex_identifier(lexer.expr)
-        char === ?" -> lex_string(rest) # Drop " off
+        is_start_of_identifier(char) -> lex_identifier(lexer.expr)
+        char === ?" -> lex_string(rest)
         char === ?: -> lex_atom(rest)
         true ->        lex_symbol(lexer.expr)
       end

@@ -22,7 +22,11 @@ defmodule Mi.Token do
 
   defmacro is_identifier_literal(c) do
     quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or
-      unquote(c) in ?0..?9 or unquote(c) in [?_, ?-, ?@, ?/, ?!]
+      unquote(c) in ?0..?9 or unquote(c) in [?-, ?@, ?/, ?!]
+  end
+
+  defmacro is_start_of_identifier(c) do
+    quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or unquote(c) === ?@
   end
 
   @keywords [
@@ -62,6 +66,6 @@ defmodule Mi.Token do
   true
 
   """
-  @spec keyword?(charlist) :: bool
+  @spec keyword?(charlist) :: boolean
   def keyword?(value), do: value in @keywords
 end
