@@ -14,6 +14,7 @@ defmodule Mi.Lexer do
   defstruct tokens: [], line: 1, pos: 1, expr: ''
 
   @typep token_result :: {atom, charlist, {charlist, atom}}
+  @typep token_error :: {atom, nil, String.t}
 
   @spec error(%Lexer{}, String.t) :: String.t
   defp error(lexer, message) do
@@ -37,7 +38,8 @@ defmodule Mi.Lexer do
     {:ok, expr, {acc, type}}
   end
 
-  @spec lex_identifier(charlist, charlist) :: token_result
+  @spec lex_string(charlist, charlist) :: token_result
+  @spec lex_string(charlist, charlist) :: token_error
   defp lex_string(expr, acc \\ '')
   defp lex_string([], _acc) do
     {:error, nil, "unterminated string"}
@@ -71,6 +73,7 @@ defmodule Mi.Lexer do
   end
 
   @spec lex_symbol(charlist) :: token_result
+  @spec lex_symbol(charlist) :: token_error
   defp lex_symbol(expr) do
     case expr do
       [?( = char | rest] -> {:ok, rest, {char, :oparen}}
