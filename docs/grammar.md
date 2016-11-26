@@ -2,8 +2,8 @@
 This document containts Mi's grammar as it is used to parse source files.
 
 ```
-list   ::= [ "'" ], "(", { sexpr }, ")" ;
-sexpr  ::= [ "'" ], atom | list | ;
+list  ::= [ "'" ], "(", sexpr, ")" ;
+sexpr ::= [ "'" ], atom | list | { list } | ;
 
 digit  ::= "0" | ... | "9" ;
 letter ::= ("a" | ... | "z") | ("A" | ... | "Z") ;
@@ -17,7 +17,7 @@ operator   ::= "+" | "++" | "-" | "--" | "/" | "//" | "*" | "%" | "**" | "<" | "
 string     ::= '"', { ? all characters ? - '"' | '\"' }, '"' ;
 symbol     ::= ":", { letter | "_" | "-" | "+" | "*" | "/" | "%" | "^" | "@" | "!"
                     | "&" | "|" } ;
-number ::= [ "-" ], ({ digit } | { digit }, ".", { digit }) ;
+number ::= [ "-" ], { digit } | ({ digit }, ".", { digit }) ;
 scientific-number ::= { number }, "e", [ "-" ], { digit } ;
 
 atom ::= identifier
