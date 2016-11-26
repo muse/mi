@@ -2,17 +2,21 @@
 This document containts Mi's grammar as it is used to parse source files.
 
 ```
-list ::= "(", { sexpr }, ")" ;
-sexpr ::= atom | list | ;
-quote ::= "'", sexpr ;
+list   ::= [ "'" ], "(", { sexpr }, ")" ;
+sexpr  ::= [ "'" ], atom | list | ;
 
-digit ::= "0" | ... | "9" ;
+digit  ::= "0" | ... | "9" ;
 letter ::= ("a" | ... | "z") | ("A" | ... | "Z") ;
 
 identifier ::= letter, { letter | digit | "/" | "#" | "-" } ;
-string ::= '"', { ? all characters ? - '"' | '\"' }, '"' ;
-symbol ::= ":", { letter | "_" | "-" | "+" | "*" | "/" | "%" | "^" | "@" | "!"
-                  | "&" | "|" } ;
+
+operator   ::= "+" | "++" | "-" | "--" | "/" | "//" | "*" | "%" | "**" | "<" | ">"
+             | "<=" | ">=" | "<<" | ">>" | ">>>" | "~" | "^" | "|" | "&" | "not"
+             | "and" | "or" | "eq" | "delete" | "typeof" | "void" | "new" |
+             | "instanceof" | "in" | "from"
+string     ::= '"', { ? all characters ? - '"' | '\"' }, '"' ;
+symbol     ::= ":", { letter | "_" | "-" | "+" | "*" | "/" | "%" | "^" | "@" | "!"
+                    | "&" | "|" } ;
 number ::= [ "-" ], ({ digit } | { digit }, ".", { digit }) ;
 scientific-number ::= { number }, "e", [ "-" ], { digit } ;
 
@@ -20,13 +24,18 @@ atom ::= identifier
        | number
        | string
        | symbol
-       | quote
-       | use-expr
-       | define-expr;
+       | statement;
 
-arg-list ::= "(", { identifier } | , ")" ; => (defun test (a b c)
+statement ::= use
+            | define
+            | defun
+            | lambda;
 
-use-expr ::= "use", [ "*" ], list | string ;
-define-expr ::= "define", [ "*" ], identifier, sexpr ;
-lambda-expr ::= "lambda", arg-list, sexpr ;
+arg-list ::= "(", { identifier } | , ")" ;
+
+arithmetic-expression ::= operator, sexpr, [ sexpr ] ;
+use    ::= "use", [ "*" ], list | string ;
+define ::= "define", [ "*" ], identifier, sexpr ;
+defun  ::= "defun", identifier, arg-list, list ;
+lambda ::= "lambda", arg-list, sexpr ;``
 ```
