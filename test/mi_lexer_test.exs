@@ -6,14 +6,10 @@ defmodule MiLexerTest do
   describe "&Lexer.lex/1" do
     test "Keywords are recognized" do
       {:ok, tokens} = Lexer.lex("""
-      lambda define or and not use loop cond case try catch throw true false
-      nil
+      lambda define use loop cond case try catch throw true false nil
       """)
       assert [%Token{type: :lambda, value: 'lambda'},
               %Token{type: :define, value: 'define'},
-              %Token{type: :or, value: 'or'},
-              %Token{type: :and, value: 'and'},
-              %Token{type: :not, value: 'not'},
               %Token{type: :use, value: 'use'},
               %Token{type: :loop, value: 'loop'},
               %Token{type: :cond, value: 'cond'},
@@ -28,7 +24,7 @@ defmodule MiLexerTest do
 
     test "Keywords aren't recognized when part of a longer identifier" do
       {:ok, tokens} = Lexer.lex("""
-      lambda- definee orw and/ nott used loopp cond- case- tryy catchh throww
+      lambda- definee used loopp cond- case- tryy catchh throww
       truee falsey nill
       """)
       Enum.map(tokens, fn(token) -> assert token.type === :identifier end)
@@ -58,10 +54,39 @@ defmodule MiLexerTest do
 
     test "Symbol literals are recognized and read properly" do
       {:ok, tokens} = Lexer.lex("""
-        :ok :__ :_- :++ :- :* :/ :% :^ :@ :! :& :| :c|C :aA!
+      :ok :__ :_- :++ :- :* :/ :% :^ :@ :! :& :| :c|C :aA!
       """)
 
       Enum.map(tokens, fn(token) -> assert token.type === :symbol end)
+    end
+
+    test "Operators are recoginized properly" do
+      # %Token{type: :or, value: 'or'},
+      # %Token{type: :and, value: 'and'},
+      # %Token{type: :not, value: 'not'},
+      {:ok, tokens} = Lexer.lex("""
+      +  ++  -  --  /  //  *  %  **  <  > <=  >=  <<  >>  >>>  ~  ^ & not
+      and  or  eq  delete  typeof  void  new instanceof  in  from
+      """)
+      Enum.map(tokens, fn(token) -> assert token.type === :operator end)
+
+      assert [
+        %Token{value: 43}, %Token{value: '++'},
+        %Token{value: 45}, %Token{value: '--'},
+        %Token{value: 47}, %Token{value: '//'},
+        %Token{value: 42}, %Token{value: 37},
+        %Token{value: '**'}, %Token{value: 60},
+        %Token{value: 62}, %Token{value: '<='},
+        %Token{value: '>='}, %Token{value: '<<'},
+        %Token{value: '>>'}, %Token{value: '>>>'},
+        %Token{value: 126}, %Token{value: 94},
+        %Token{value: 38}, %Token{value: 'not'},
+        %Token{value: 'and'}, %Token{value: 'or'},
+        %Token{value: 'eq'}, %Token{value: 'delete'},
+        %Token{value: 'typeof'}, %Token{value: 'void'},
+        %Token{value: 'new'}, %Token{value: 'instanceof'},
+        %Token{value: 'in'}, %Token{value: 'from'}
+      ]
     end
 
     test "Comments are skipped" do

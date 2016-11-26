@@ -42,16 +42,13 @@ defmodule Mi.Token do
     quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or unquote(c) === ?@
   end
 
-  defmacro is_operator(c) do
-    quote do: unquote(c) in [?+, ?-, ?/, ?*, ?<, ?>, ?~, ?^, ?|, ?&]
+  defmacro is_operator_initiater(c) do
+    quote do: unquote(c) in [?+, ?-, ?/, ?*, ?<, ?>, ?~, ?^, ?|, ?&, ?%]
   end
 
   @keywords [
     'lambda',
     'define',
-    'or',
-    'and',
-    'not',
     'use',
     'loop',  # for, while
     'cond',  # if
@@ -64,6 +61,11 @@ defmodule Mi.Token do
     'nil',
   ]
 
+  @operators [
+    'not', 'and', 'or', 'eq', 'delete', 'typeof', 'void', 'new', 'instanceof',
+    'in', 'from'
+  ]
+
   @spec new(%{pos: pos_integer, line: pos_integer}, charlist, type) :: Token.t
   def new(%{pos: pos, line: line}, value, type) do
     %Token{
@@ -74,14 +76,9 @@ defmodule Mi.Token do
     }
   end
 
-  @doc """
-  Check if a charlist is a keyword.
+  @spec operator?(charlist) :: boolean
+  def operator?(value), do: value in @operators
 
-  ## Example:
-  iex> Mi.Lexer.Token.keyword?('lambda')
-  true
-
-  """
   @spec keyword?(charlist) :: boolean
   def keyword?(value), do: value in @keywords
 end

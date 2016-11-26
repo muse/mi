@@ -24,6 +24,9 @@ defmodule Mi.Lexer do
 
   @typep lexer_result :: {:ok, [Token.t]} | {:error, String.t}
 
+  @spec lex(String.t) :: lexer_result
+  def lex(expr), do: do_lex(%Lexer{expr: to_charlist(expr)})
+
   @spec error(Lexer.t, String.t) :: String.t
   defp error(lexer, message) do
     "#{lexer.line}:#{lexer.pos}: #{message}"
@@ -37,10 +40,10 @@ defmodule Mi.Lexer do
   defp lex_identifier(expr, acc) do
     acc = Enum.reverse(acc)
     type =
-      if Token.keyword?(acc) do
-        List.to_atom(acc)
-      else
-        :identifier
+      cond do
+        Token.keyword?(acc)  -> List.to_atom(acc)
+        Token.operator?(acc) -> :operator
+        :otherwise           -> :identifier
       end
 
     {:ok, {expr, {acc, type}}}
@@ -83,20 +86,27 @@ defmodule Mi.Lexer do
   defp lex_operator(expr) do
     {rest, char} =
       case expr do
-        [?+ = char | rest] -> {rest, char}
-        [?- = char | rest] -> {rest, char}
-        [?/ = char | rest] -> {rest, char}
-        [?* = char | rest] -> {rest, char}
-        [?<, ?< | rest]    -> {rest, '<<'}
-        [?>, ?> | rest]    -> {rest, '>>'}
-        [?< = char | rest] -> {rest, char}
-        [?> = char | rest] -> {rest, char}
-        [?~ = char | rest] -> {rest, char}
-        [?^ = char | rest] -> {rest, char}
-        [?| = char | rest] -> {rest, char}
-        [?& = char | rest] -> {rest, char}
+        [?+, ?+ | rest]     -> {rest, '++'}
+        [?-, ?- | rest]     -> {rest, '--'}
+        [?/, ?/ | rest]     -> {rest, '//'}
+        [?*, ?* | rest]     -> {rest, '**'}
+        [?<, ?< | rest]     -> {rest, '<<'}
+        [?>, ?>, ?> | rest] -> {rest, '>>>'}
+        [?>, ?> | rest]     -> {rest, '>>'}
+        [?<, ?= | rest]     -> {rest, '<='}
+        [?>, ?= | rest]     -> {rest, '>='}
+        [?- = char | rest]  -> {rest, char}
+        [?+ = char | rest]  -> {rest, char}
+        [?/ = char | rest]  -> {rest, char}
+        [?* = char | rest]  -> {rest, char}
+        [?% = char | rest]  -> {rest, char}
+        [?< = char | rest]  -> {rest, char}
+        [?> = char | rest]  -> {rest, char}
+        [?~ = char | rest]  -> {rest, char}
+        [?^ = char | rest]  -> {rest, char}
+        [?| = char | rest]  -> {rest, char}
+        [?& = char | rest]  -> {rest, char}
       end
-
     {:ok, {rest, {char, :operator}}}
   end
 
@@ -104,9 +114,6 @@ defmodule Mi.Lexer do
   defp skip_comment([]), do: []
   defp skip_comment([?\n | _rest] = expr), do: expr
   defp skip_comment([_char | rest]), do: skip_comment(rest)
-
-  @spec lex(String.t) :: lexer_result
-  def lex(expr), do: do_lex(%Lexer{expr: to_charlist(expr)})
 
   @spec do_lex(Lexer.t) :: lexer_result
   defp do_lex(%Lexer{expr: []} = lexer) do
@@ -124,7 +131,7 @@ defmodule Mi.Lexer do
   defp do_lex(%Lexer{expr: [char | rest]} = lexer) do
     result =
       cond do
-        is_operator(char) -> lex_operator(lexer.expr)
+        is_operator_initiater(char) -> lex_operator(lexer.expr)
         is_numeric_literal(char) -> lex_number(lexer.expr)
         is_start_of_identifier(char) -> lex_identifier(lexer.expr)
         char === ?" -> lex_string(rest)
