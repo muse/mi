@@ -146,7 +146,7 @@ defmodule Mi.Lexer do
                  expr: rest,
                  tokens: [token | lexer.tokens],
                  pos: lexer.pos + (to_string([token.value]) |> String.length)
-                })
+               })
       {:error, reason} ->
         {:error, error(lexer, reason)}
     end
