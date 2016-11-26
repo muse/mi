@@ -16,7 +16,6 @@ defmodule Mi.Token do
 
   @type type :: atom
 
-
   defimpl String.Chars, for: Token do
     def to_string(token), do: "#{token.value}"
   end
@@ -25,7 +24,7 @@ defmodule Mi.Token do
     quote do: unquote(c) in [?\t, ?\s, ?\r]
   end
 
-  defmacro is_atom_literal(c) do
+  defmacro is_symbol_literal(c) do
     quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or
       unquote(c) in [?_, ?-, ?+, ?-, ?*, ?/, ?%, ?^, ?@, ?!, ?&, ?|]
   end
@@ -43,10 +42,8 @@ defmodule Mi.Token do
     quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or unquote(c) === ?@
   end
 
-  defmacro is_operator(token) do
-    quote do:
-      unquote(token.type) in [:+, :-, :/, :*, :bshiftl, :bshiftr, :<, :>,
-                              :bnot, :bxor, :bor, :band, :and, :or, :not]
+  defmacro is_operator(c) do
+    quote do: unquote(c) in [?+, ?-, ?/, ?*, ?<, ?>, ?~, ?^, ?|, ?&]
   end
 
   @keywords [

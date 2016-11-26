@@ -70,36 +70,34 @@ defmodule Mi.Lexer do
     {:ok, {expr, {Enum.reverse(acc), :number}}}
   end
 
-  @spec lex_atom(charlist, charlist) :: token_result
-  defp lex_atom(expr, acc \\ '')
-  defp lex_atom([char | rest], acc) when is_atom_literal(char) do
-    lex_atom(rest, [char | acc])
+  @spec lex_symbol(charlist, charlist) :: token_result
+  defp lex_symbol(expr, acc \\ '')
+  defp lex_symbol([char | rest], acc) when is_symbol_literal(char) do
+    lex_symbol(rest, [char | acc])
   end
-  defp lex_atom(expr, acc) do
-    {:ok, {expr, {Enum.reverse(acc), :atom}}}
+  defp lex_symbol(expr, acc) do
+    {:ok, {expr, {Enum.reverse(acc), :symbol}}}
   end
 
-  @spec lex_symbol(charlist) :: token_result | token_error
-  defp lex_symbol(expr) do
-    case expr do
-      [?( = char | rest] -> {:ok, {rest, {char, :oparen}}}
-      [?) = char | rest] -> {:ok, {rest, {char, :cparen}}}
-      [?+ = char | rest] -> {:ok, {rest, {char, :+}}}
-      [?- = char | rest] -> {:ok, {rest, {char, :-}}}
-      [?/ = char | rest] -> {:ok, {rest, {char, :/}}}
-      [?* = char | rest] -> {:ok, {rest, {char, :*}}}
-      [?<, ?< | rest]    -> {:ok, {rest, {'<<', :bshiftl}}}
-      [?>, ?> | rest]    -> {:ok, {rest, {'>>', :bshiftr}}}
-      [?< = char | rest] -> {:ok, {rest, {char, :<}}}
-      [?> = char | rest] -> {:ok, {rest, {char, :>}}}
-      [?~ = char | rest] -> {:ok, {rest, {char, :bnot}}}
-      [?^ = char | rest] -> {:ok, {rest, {char, :bxor}}}
-      [?| = char | rest] -> {:ok, {rest, {char, :bor}}}
-      [?& = char | rest] -> {:ok, {rest, {char, :band}}}
-      [?' = char | rest] -> {:ok, {rest, {char, :quote}}}
-      [char | _rest] ->
-        {:error, "unexpected token `#{[char]}'"}
-    end
+  @spec lex_operator(charlist) :: token_result
+  defp lex_operator(expr) do
+    {rest, char} =
+      case expr do
+        [?+ = char | rest] -> {rest, char}
+        [?- = char | rest] -> {rest, char}
+        [?/ = char | rest] -> {rest, char}
+        [?* = char | rest] -> {rest, char}
+        [?<, ?< | rest]    -> {rest, '<<'}
+        [?>, ?> | rest]    -> {rest, '>>'}
+        [?< = char | rest] -> {rest, char}
+        [?> = char | rest] -> {rest, char}
+        [?~ = char | rest] -> {rest, char}
+        [?^ = char | rest] -> {rest, char}
+        [?| = char | rest] -> {rest, char}
+        [?& = char | rest] -> {rest, char}
+      end
+
+    {:ok, {rest, {char, :operator}}}
   end
 
   @spec skip_comment(charlist) :: charlist
@@ -126,11 +124,19 @@ defmodule Mi.Lexer do
   defp do_lex(%Lexer{expr: [char | rest]} = lexer) do
     result =
       cond do
+        is_operator(char) -> lex_operator(lexer.expr)
         is_numeric_literal(char) -> lex_number(lexer.expr)
         is_start_of_identifier(char) -> lex_identifier(lexer.expr)
         char === ?" -> lex_string(rest)
-        char === ?: -> lex_atom(rest)
-        :else -> lex_symbol(lexer.expr)
+        char === ?: -> lex_symbol(rest)
+        :otherwise ->
+          case lexer.expr do
+            [?( = char | rest] -> {:ok, {rest, {char, :oparen}}}
+            [?) = char | rest] -> {:ok, {rest, {char, :cparen}}}
+            [?' = char | rest] -> {:ok, {rest, {char, :quote}}}
+            [char | _rest] ->
+              {:error, "unexpected token `#{[char]}'"}
+          end
       end
 
     case result do

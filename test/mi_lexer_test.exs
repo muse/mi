@@ -56,6 +56,14 @@ defmodule MiLexerTest do
       Enum.map(tokens, fn(token) -> assert token.type === :identifier end)
     end
 
+    test "Symbol literals are recognized and read properly" do
+      {:ok, tokens} = Lexer.lex("""
+        :ok :__ :_- :++ :- :* :/ :% :^ :@ :! :& :| :c|C :aA!
+      """)
+
+      Enum.map(tokens, fn(token) -> assert token.type === :symbol end)
+    end
+
     test "Comments are skipped" do
       {:ok, tokens_a} = Lexer.lex("""
       (define x 10) ; Insightful comment
@@ -67,7 +75,7 @@ defmodule MiLexerTest do
               %Token{type: :number},
               %Token{type: :cparen},
               %Token{type: :oparen},
-              %Token{type: :*},
+              %Token{type: :operator},
               %Token{type: :identifier},
               %Token{type: :identifier},
               %Token{type: :cparen}] = tokens_a
