@@ -5,7 +5,9 @@ defmodule Mi.AST do
   @type t :: [tnode]
 
   @type tnode :: Lambda.t
-               | Expression.t
+               | Operator.t
+               | Identifier.t
+               | Symbol.t
                | Number.t
                | String.t
 
@@ -18,14 +20,22 @@ defmodule Mi.AST do
     }
   end
 
-  defmodule Expression do
-    defstruct [:operator, :lhs, :rhs]
+  defmodule Operator do
+    defstruct [:value]
 
-    @type t :: %__MODULE__{
-      operator: atom,
-      lhs: AST.tnode,
-      rhs: AST.tnode
-    }
+    @type t :: %__MODULE__{ value: atom }
+  end
+
+  defmodule Identifier do
+    defstruct [:value]
+
+    @type t :: %__MODULE__{ value: charlist }
+  end
+
+  defmodule Symbol do
+    defstruct [:value]
+
+    @type t :: %__MODULE__{ value: charlist }
   end
 
   defmodule Number do

@@ -86,7 +86,7 @@ defmodule MiLexerTest do
         %Token{value: 'typeof'}, %Token{value: 'void'},
         %Token{value: 'new'}, %Token{value: 'instanceof'},
         %Token{value: 'in'}, %Token{value: 'from'}
-      ]
+      ] = tokens
     end
 
     test "Comments are skipped" do

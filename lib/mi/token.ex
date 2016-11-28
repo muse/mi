@@ -17,7 +17,7 @@ defmodule Mi.Token do
   @type type :: atom
 
   defimpl String.Chars, for: Token do
-    def to_string(token), do: "#{token.value}"
+    def to_string(token), do: "#{[token.value]}"
   end
 
   defmacro is_whitespace(c) do
