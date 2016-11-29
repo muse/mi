@@ -46,7 +46,7 @@ defmodule MiLexerTest do
 
     test "Identifier literals are recognized and read properly" do
       {:ok, tokens} = Lexer.lex("""
-      console/log document/write an-identifier20 @global b2-2 simpleident x y z
+      console/log document/write an-identifier20 b2-2 simpleident x y z
       """)
 
       Enum.map(tokens, fn(token) -> assert token.type === :identifier end)
@@ -61,38 +61,33 @@ defmodule MiLexerTest do
     end
 
     test "Operators are recoginized properly" do
-      # %Token{type: :or, value: 'or'},
-      # %Token{type: :and, value: 'and'},
-      # %Token{type: :not, value: 'not'},
       {:ok, tokens} = Lexer.lex("""
       +  ++  -  --  /  //  *  %  **  <  > <=  >=  <<  >>  >>>  ~  ^ & not
       and  or  eq  delete  typeof  void  new instanceof  in  from
       """)
       Enum.map(tokens, fn(token) -> assert token.type === :operator end)
 
-      assert [
-        %Token{value: 43}, %Token{value: '++'},
-        %Token{value: 45}, %Token{value: '--'},
-        %Token{value: 47}, %Token{value: '//'},
-        %Token{value: 42}, %Token{value: 37},
-        %Token{value: '**'}, %Token{value: 60},
-        %Token{value: 62}, %Token{value: '<='},
-        %Token{value: '>='}, %Token{value: '<<'},
-        %Token{value: '>>'}, %Token{value: '>>>'},
-        %Token{value: 126}, %Token{value: 94},
-        %Token{value: 38}, %Token{value: 'not'},
-        %Token{value: 'and'}, %Token{value: 'or'},
-        %Token{value: 'eq'}, %Token{value: 'delete'},
-        %Token{value: 'typeof'}, %Token{value: 'void'},
-        %Token{value: 'new'}, %Token{value: 'instanceof'},
-        %Token{value: 'in'}, %Token{value: 'from'}
-      ] = tokens
+      assert [%Token{value: 43}, %Token{value: '++'},
+              %Token{value: 45}, %Token{value: '--'},
+              %Token{value: 47}, %Token{value: '//'},
+              %Token{value: 42}, %Token{value: 37},
+              %Token{value: '**'}, %Token{value: 60},
+              %Token{value: 62}, %Token{value: '<='},
+              %Token{value: '>='}, %Token{value: '<<'},
+              %Token{value: '>>'}, %Token{value: '>>>'},
+              %Token{value: 126}, %Token{value: 94},
+              %Token{value: 38}, %Token{value: 'not'},
+              %Token{value: 'and'}, %Token{value: 'or'},
+              %Token{value: 'eq'}, %Token{value: 'delete'},
+              %Token{value: 'typeof'}, %Token{value: 'void'},
+              %Token{value: 'new'}, %Token{value: 'instanceof'},
+              %Token{value: 'in'}, %Token{value: 'from'}] = tokens
     end
 
     test "Comments are skipped" do
       {:ok, tokens_a} = Lexer.lex("""
       (define x 10) ; Insightful comment
-      (* @x/n @x/m)
+      (* x/n x/m)
       """)
       assert [%Token{type: :oparen},
               %Token{type: :define},

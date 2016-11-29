@@ -35,11 +35,11 @@ defmodule Mi.Token do
 
   defmacro is_identifier_literal(c) do
     quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or
-      unquote(c) in ?0..?9 or unquote(c) in [?-, ?@, ?/, ?!]
+      unquote(c) in ?0..?9 or unquote(c) in [?-, ?/]
   end
 
   defmacro is_start_of_identifier(c) do
-    quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or unquote(c) === ?@
+    quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z
   end
 
   defmacro is_operator_initiater(c) do
