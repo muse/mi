@@ -27,6 +27,42 @@ defmodule Mi.Lexer do
   @spec lex(String.t) :: lexer_result
   def lex(expr), do: do_lex(%Lexer{expr: to_charlist(expr)})
 
+  @spec do_lex(Lexer.t) :: lexer_result
+  defp do_lex(%Lexer{expr: []} = lexer) do
+    {:ok, Enum.reverse(lexer.tokens)}
+  end
+  defp do_lex(%Lexer{expr: [?\n | rest]} = lexer) do
+    do_lex(%{lexer | expr: rest, line: lexer.line + 1, pos: 1})
+  end
+  defp do_lex(%Lexer{expr: [?; | rest]} = lexer) do
+    do_lex(%{lexer | expr: skip_comment(rest)})
+  end
+  defp do_lex(%Lexer{expr: [char | rest]} = lexer) when is_whitespace(char) do
+    do_lex(%{lexer | expr: rest, pos: lexer.pos + 1})
+  end
+  defp do_lex(%Lexer{expr: [char | rest]} = lexer) do
+    result =
+      cond do
+        is_numeric_literal(char) -> lex_number(lexer.expr)
+        is_start_of_identifier(char) -> lex_identifier(lexer.expr)
+        char === ?" -> lex_string(rest)
+        char === ?: -> lex_symbol(rest)
+        :otherwise -> lex_operator(lexer.expr)
+      end
+
+    case result do
+      {:ok, {rest, {value, type}}} ->
+        token = Token.new(lexer, value, type)
+        do_lex(%{lexer |
+                 expr: rest,
+                 tokens: [token | lexer.tokens],
+                 pos: lexer.pos + (to_string([token.value]) |> String.length)
+               })
+      {:error, reason} ->
+        {:error, error(lexer, reason)}
+    end
+  end
+
   @spec error(Lexer.t, String.t) :: String.t
   defp error(lexer, message) do
     "#{lexer.line}:#{lexer.pos}: #{message}"
@@ -40,10 +76,10 @@ defmodule Mi.Lexer do
   defp lex_identifier(expr, acc) do
     acc = Enum.reverse(acc)
     type =
-      cond do
-        Token.keyword?(acc)  -> List.to_atom(acc)
-        Token.operator?(acc) -> :operator
-        :otherwise           -> :identifier
+      if Token.keyword?(acc) do
+        List.to_atom(acc)
+      else
+        :identifier
       end
 
     {:ok, {expr, {acc, type}}}
@@ -84,78 +120,37 @@ defmodule Mi.Lexer do
 
   @spec lex_operator(charlist) :: token_result
   defp lex_operator(expr) do
-    {rest, char} =
-      case expr do
-        [?+, ?+ | rest]     -> {rest, '++'}
-        [?-, ?- | rest]     -> {rest, '--'}
-        [?/, ?/ | rest]     -> {rest, '//'}
-        [?*, ?* | rest]     -> {rest, '**'}
-        [?<, ?< | rest]     -> {rest, '<<'}
-        [?>, ?>, ?> | rest] -> {rest, '>>>'}
-        [?>, ?> | rest]     -> {rest, '>>'}
-        [?<, ?= | rest]     -> {rest, '<='}
-        [?>, ?= | rest]     -> {rest, '>='}
-        [?- = char | rest]  -> {rest, char}
-        [?+ = char | rest]  -> {rest, char}
-        [?/ = char | rest]  -> {rest, char}
-        [?* = char | rest]  -> {rest, char}
-        [?% = char | rest]  -> {rest, char}
-        [?< = char | rest]  -> {rest, char}
-        [?> = char | rest]  -> {rest, char}
-        [?~ = char | rest]  -> {rest, char}
-        [?^ = char | rest]  -> {rest, char}
-        [?| = char | rest]  -> {rest, char}
-        [?& = char | rest]  -> {rest, char}
-      end
-    {:ok, {rest, {char, :operator}}}
+    case expr do
+      [?( = char | rest]  -> {:ok, {rest, {char, :oparen}}}
+      [?) = char | rest]  -> {:ok, {rest, {char, :cparen}}}
+      [?' = char | rest]  -> {:ok, {rest, {char, :quote}}}
+      [?+, ?+ | rest]     -> {:ok, {rest, {"++", :increment}}}
+      [?-, ?- | rest]     -> {:ok, {rest, {"--", :decrease}}}
+      [?/, ?/ | rest]     -> {:ok, {rest, {"//", :intdivide}}}
+      [?*, ?* | rest]     -> {:ok, {rest, {"**", :power}}}
+      [?<, ?< | rest]     -> {:ok, {rest, {"<<", :bshiftl}}}
+      [?>, ?>, ?> | rest] -> {:ok, {rest, {">>>", :ubshiftr}}}
+      [?>, ?> | rest]     -> {:ok, {rest, {">>", :bshiftr}}}
+      [?<, ?= | rest]     -> {:ok, {rest, {"<=", :lteq}}}
+      [?>, ?= | rest]     -> {:ok, {rest, {">=", :gteq}}}
+      [?- = char | rest]  -> {:ok, {rest, {char, :subtract}}}
+      [?+ = char | rest]  -> {:ok, {rest, {char, :add}}}
+      [?/ = char | rest]  -> {:ok, {rest, {char, :divide}}}
+      [?* = char | rest]  -> {:ok, {rest, {char, :*}}}
+      [?% = char | rest]  -> {:ok, {rest, {char, :modulo}}}
+      [?< = char | rest]  -> {:ok, {rest, {char, :lt}}}
+      [?> = char | rest]  -> {:ok, {rest, {char, :gt}}}
+      [?~ = char | rest]  -> {:ok, {rest, {char, :bnot}}}
+      [?^ = char | rest]  -> {:ok, {rest, {char, :bxor}}}
+      [?| = char | rest]  -> {:ok, {rest, {char, :bor}}}
+      [?& = char | rest]  -> {:ok, {rest, {char, :band}}}
+      [char | _rest] ->
+        {:error, "unexpected token `#{[char]}'"}
+    end
   end
 
   @spec skip_comment(charlist) :: charlist
   defp skip_comment([]), do: []
   defp skip_comment([?\n | _rest] = expr), do: expr
   defp skip_comment([_char | rest]), do: skip_comment(rest)
-
-  @spec do_lex(Lexer.t) :: lexer_result
-  defp do_lex(%Lexer{expr: []} = lexer) do
-    {:ok, Enum.reverse(lexer.tokens)}
-  end
-  defp do_lex(%Lexer{expr: [?\n | rest]} = lexer) do
-    do_lex(%{lexer | expr: rest, line: lexer.line + 1, pos: 1})
-  end
-  defp do_lex(%Lexer{expr: [?; | rest]} = lexer) do
-    do_lex(%{lexer | expr: skip_comment(rest)})
-  end
-  defp do_lex(%Lexer{expr: [char | rest]} = lexer) when is_whitespace(char) do
-    do_lex(%{lexer | expr: rest, pos: lexer.pos + 1})
-  end
-  defp do_lex(%Lexer{expr: [char | rest]} = lexer) do
-    result =
-      cond do
-        is_operator_initiater(char) -> lex_operator(lexer.expr)
-        is_numeric_literal(char) -> lex_number(lexer.expr)
-        is_start_of_identifier(char) -> lex_identifier(lexer.expr)
-        char === ?" -> lex_string(rest)
-        char === ?: -> lex_symbol(rest)
-        :otherwise ->
-          case lexer.expr do
-            [?( = char | rest] -> {:ok, {rest, {char, :oparen}}}
-            [?) = char | rest] -> {:ok, {rest, {char, :cparen}}}
-            [?' = char | rest] -> {:ok, {rest, {char, :quote}}}
-            [char | _rest] ->
-              {:error, "unexpected token `#{[char]}'"}
-          end
-      end
-
-    case result do
-      {:ok, {rest, {value, type}}} ->
-        token = Token.new(lexer, value, type)
-        do_lex(%{lexer |
-                 expr: rest,
-                 tokens: [token | lexer.tokens],
-                 pos: lexer.pos + (to_string([token.value]) |> String.length)
-               })
-      {:error, reason} ->
-        {:error, error(lexer, reason)}
-    end
-  end
 end

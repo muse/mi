@@ -8,18 +8,18 @@ defmodule MiLexerTest do
       {:ok, tokens} = Lexer.lex("""
       lambda define use loop cond case try catch throw true false nil
       """)
-      assert [%Token{type: :lambda, value: 'lambda'},
-              %Token{type: :define, value: 'define'},
-              %Token{type: :use, value: 'use'},
-              %Token{type: :loop, value: 'loop'},
-              %Token{type: :cond, value: 'cond'},
-              %Token{type: :case, value: 'case'},
-              %Token{type: :try, value: 'try'},
-              %Token{type: :catch, value: 'catch'},
-              %Token{type: :throw, value: 'throw'},
-              %Token{type: :true, value: 'true'},
-              %Token{type: :false, value: 'false'},
-              %Token{type: :nil, value: 'nil'}] = tokens
+      assert [%Token{type: :lambda, value: "lambda"},
+              %Token{type: :define, value: "define"},
+              %Token{type: :use, value: "use"},
+              %Token{type: :loop, value: "loop"},
+              %Token{type: :cond, value: "cond"},
+              %Token{type: :case, value: "case"},
+              %Token{type: :try, value: "try"},
+              %Token{type: :catch, value: "catch"},
+              %Token{type: :throw, value: "throw"},
+              %Token{type: :true, value: "true"},
+              %Token{type: :false, value: "false"},
+              %Token{type: :nil, value: "nil"}] = tokens
     end
 
     test "Keywords aren't recognized when part of a longer identifier" do
@@ -33,8 +33,8 @@ defmodule MiLexerTest do
     test "String literals are recognized and read properly" do
       {:ok, tokens} = Lexer.lex(~s("I'm Å \\"string\\"" "I'm a seperate string!"))
 
-      assert [%Token{type: :string, value: ~c(I'm Å \\"string\\")},
-              %Token{type: :string, value: ~c(I'm a seperate string!)}] = tokens
+      assert [%Token{type: :string, value: ~s(I'm Å \\"string\\")},
+              %Token{type: :string, value: ~s(I'm a seperate string!)}] = tokens
     end
 
     test "Unterminated strings error" do
@@ -65,23 +65,37 @@ defmodule MiLexerTest do
       +  ++  -  --  /  //  *  %  **  <  > <=  >=  <<  >>  >>>  ~  ^ & not
       and  or  eq  delete  typeof  void  new instanceof  in  from
       """)
-      Enum.map(tokens, fn(token) -> assert token.type === :operator end)
 
-      assert [%Token{value: 43}, %Token{value: '++'},
-              %Token{value: 45}, %Token{value: '--'},
-              %Token{value: 47}, %Token{value: '//'},
-              %Token{value: 42}, %Token{value: 37},
-              %Token{value: '**'}, %Token{value: 60},
-              %Token{value: 62}, %Token{value: '<='},
-              %Token{value: '>='}, %Token{value: '<<'},
-              %Token{value: '>>'}, %Token{value: '>>>'},
-              %Token{value: 126}, %Token{value: 94},
-              %Token{value: 38}, %Token{value: 'not'},
-              %Token{value: 'and'}, %Token{value: 'or'},
-              %Token{value: 'eq'}, %Token{value: 'delete'},
-              %Token{value: 'typeof'}, %Token{value: 'void'},
-              %Token{value: 'new'}, %Token{value: 'instanceof'},
-              %Token{value: 'in'}, %Token{value: 'from'}] = tokens
+      assert [%Token{type: :plus, value: "+"},
+              %Token{type: :increment, value: "++"},
+              %Token{type: :subtract, value: "-"},
+              %Token{type: :decrease, value: "--"},
+              %Token{type: :divide, value: "/"},
+              %Token{type: :intdivide, value: "//"},
+              %Token{type: :multiply, value: "*"},
+              %Token{type: :modulo, value: "%"},
+              %Token{type: :power, value: "**"},
+              %Token{type: :lt, value: "<"},
+              %Token{type: :gt, value: ">"},
+              %Token{type: :lteq, value: "<="},
+              %Token{type: :gteq, value: ">="},
+              %Token{type: :bshiftl, value: "<<"},
+              %Token{type: :bshiftr, value: ">>"},
+              %Token{type: :ubshiftr, value: ">>>"},
+              %Token{type: :bnot, value: "~"},
+              %Token{type: :bxor, value: "^"},
+              %Token{type: :band, value: "&"},
+              %Token{type: :not, value: "not"},
+              %Token{type: :and, value: "and"},
+              %Token{type: :or, value: "or"},
+              %Token{type: :eq, value: "eq"},
+              %Token{type: :delete, value: "delete"},
+              %Token{type: :typeof, value: "typeof"},
+              %Token{type: :void, value: "void"},
+              %Token{type: :new, value: "new"},
+              %Token{type: :instanceof, value: "instanceof"},
+              %Token{type: :in, value: "in"},
+              %Token{type: :from, value: "from"}] = tokens
     end
 
     test "Comments are skipped" do
@@ -95,7 +109,7 @@ defmodule MiLexerTest do
               %Token{type: :number},
               %Token{type: :cparen},
               %Token{type: :oparen},
-              %Token{type: :operator},
+              %Token{type: :multiply},
               %Token{type: :identifier},
               %Token{type: :identifier},
               %Token{type: :cparen}] = tokens_a

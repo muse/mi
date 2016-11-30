@@ -42,11 +42,11 @@ defmodule Mi.Parser do
   defp parse_atom(%Parser{tokens: [token | rest]} = parser) do
     case token.type do
       :oparen     -> parse_list(%{parser | tokens: rest})
-      :operator   -> {rest, %AST.Operator{value: List.to_atom([token.value])}}
       :identifier -> {rest, %AST.Identifier{value: token.value}}
       :number     -> {rest, %AST.Number{value: token.value}}
       :symbol     -> {rest, %AST.Symbol{value: token.value}}
       :string     -> {rest, %AST.String{value: token.value}}
+      _           -> nil
     end
   end
 end

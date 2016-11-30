@@ -35,15 +35,11 @@ defmodule Mi.Token do
 
   defmacro is_identifier_literal(c) do
     quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or
-      unquote(c) in ?0..?9 or unquote(c) in [?-, ?/]
+      unquote(c) in ?0..?9 or unquote(c) in [?-, ?/, ?$]
   end
 
   defmacro is_start_of_identifier(c) do
     quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z
-  end
-
-  defmacro is_operator_initiater(c) do
-    quote do: unquote(c) in [?+, ?-, ?/, ?*, ?<, ?>, ?~, ?^, ?|, ?&, ?%]
   end
 
   @keywords [
@@ -59,25 +55,21 @@ defmodule Mi.Token do
     'true',
     'false',
     'nil',
-  ]
 
-  @operators [
+    # Operators
     'not', 'and', 'or', 'eq', 'delete', 'typeof', 'void', 'new', 'instanceof',
     'in', 'from'
   ]
 
-  @spec new(%{pos: pos_integer, line: pos_integer}, charlist, type) :: Token.t
+  @spec new(%{pos: pos_integer, line: pos_integer}, any, type) :: Token.t
   def new(%{pos: pos, line: line}, value, type) do
     %Token{
-      value: value,
+      value: to_string([value]),
       type: type,
       pos: pos,
       line: line
     }
   end
-
-  @spec operator?(charlist) :: boolean
-  def operator?(value), do: value in @operators
 
   @spec keyword?(charlist) :: boolean
   def keyword?(value), do: value in @keywords
