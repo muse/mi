@@ -52,27 +52,19 @@ defmodule MiLexerTest do
       Enum.map(tokens, fn(token) -> assert token.type === :identifier end)
     end
 
-    test "Symbol literals are recognized and read properly" do
-      {:ok, tokens} = Lexer.lex("""
-      :ok :__ :_- :++ :- :* :/ :% :^ :@ :! :& :| :c|C :aA!
-      """)
-
-      Enum.map(tokens, fn(token) -> assert token.type === :symbol end)
-    end
-
     test "Operators are recoginized properly" do
       {:ok, tokens} = Lexer.lex("""
       +  ++  -  --  /  //  *  %  **  <  > <=  >=  <<  >>  >>>  ~  ^ & not
       and  or  eq  delete  typeof  void  new instanceof  in  from
       """)
 
-      assert [%Token{type: :plus, value: "+"},
+      assert [%Token{type: :add, value: "+"},
               %Token{type: :increment, value: "++"},
               %Token{type: :subtract, value: "-"},
               %Token{type: :decrease, value: "--"},
               %Token{type: :divide, value: "/"},
               %Token{type: :intdivide, value: "//"},
-              %Token{type: :multiply, value: "*"},
+              %Token{type: :*, value: "*"},
               %Token{type: :modulo, value: "%"},
               %Token{type: :power, value: "**"},
               %Token{type: :lt, value: "<"},
@@ -109,7 +101,7 @@ defmodule MiLexerTest do
               %Token{type: :number},
               %Token{type: :cparen},
               %Token{type: :oparen},
-              %Token{type: :multiply},
+              %Token{type: :*},
               %Token{type: :identifier},
               %Token{type: :identifier},
               %Token{type: :cparen}] = tokens_a
