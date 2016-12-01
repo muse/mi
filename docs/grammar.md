@@ -10,7 +10,7 @@ sexpr ::= ( [ "'" ], atom | list ) | ;
 digit  ::= "0" | ... | "9" ;
 letter ::= ( "a" | ... | "z" ) | ( "A" | ... | "Z" ) ;
 
-identifier ::= letter, { letter | digit | "/" | "#" | "-" } ;
+identifier ::= letter, { letter | digit | "/" | "-" | "$" } ;
 
 operator   ::= "+" | "++" | "-" | "--" | "/" | "//" | "*" | "%" | "**" | "<"
              | ">" | "<=" | ">=" | "<<" | ">>" | ">>>" | "~" | "^" | "|" | "&"
@@ -39,5 +39,5 @@ arg-list ::= "(", [ { identifier } ] , ")" ;
 use    ::= "use", [ "*" ], list | string ;
 define ::= "define", [ "*" ], identifier, sexpr ;
 defun  ::= "defun", identifier, arg-list, list ;
-lambda ::= "lambda", arg-list, sexpr ;
+lambda ::= "lambda", [ identifier ], arg-list, sexpr ;
 ```

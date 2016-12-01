@@ -1,11 +1,9 @@
 defmodule Mi.AST do
-  @moduledoc """
-  """
-
   @type t :: [tnode]
 
   @type tnode :: Lambda.t
-               | Operator.t
+               | List.t
+               | Expression.t
                | Identifier.t
                | Symbol.t
                | Number.t
@@ -20,19 +18,31 @@ defmodule Mi.AST do
     }
   end
 
-  defmodule Operator do
-    defstruct [:value]
+  defmodule List do
+    defstruct [:items]
 
-    @type t :: %__MODULE__{ value: atom }
+    @type t :: %__MODULE__{ items: [AST.tnode] }
+  end
+
+  defmodule Expression do
+    @enforce_keys [:operator, :arguments]
+    defstruct [:operator, :arguments]
+
+    @type t :: %__MODULE__{
+      operator: atom,
+      arguments: [AST.tnode]
+    }
   end
 
   defmodule Identifier do
-    defstruct [:value]
+    @enforce_keys [:name]
+    defstruct [:name]
 
-    @type t :: %__MODULE__{ value: charlist }
+    @type t :: %__MODULE__{ name: charlist }
   end
 
   defmodule Symbol do
+    @enforce_keys [:value]
     defstruct [:value]
 
     @type t :: %__MODULE__{ value: charlist }
@@ -45,6 +55,7 @@ defmodule Mi.AST do
   end
 
   defmodule String do
+    @enforce_keys [:value]
     defstruct [:value]
 
     @type t :: %__MODULE__{ value: charlist }

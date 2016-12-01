@@ -10,6 +10,7 @@ defmodule Mi.Lexer do
 
   alias Mi.{Lexer, Token}
 
+  @enforce_keys [:expr]
   defstruct tokens: [], line: 1, pos: 1, expr: ''
 
   @typep t :: %__MODULE__{

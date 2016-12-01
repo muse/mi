@@ -5,6 +5,7 @@ defmodule Mi.Token do
 
   alias Mi.Token
 
+  @enforce_keys [:value, :type, :line, :pos]
   defstruct [:value, :type, :line, :pos]
 
   @type t :: %__MODULE__{
