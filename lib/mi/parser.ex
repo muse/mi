@@ -4,7 +4,7 @@ defmodule Mi.Parser do
   structure.
   """
 
-  alias Mi.{Parser, Token, AST}
+  alias Mi.{Parser, Lexer, Token, AST}
 
   defstruct ast: [], tokens: []
 
@@ -23,8 +23,13 @@ defmodule Mi.Parser do
     end
   end
 
-  @spec parse([Token.t]) :: AST.t
-  def parse(tokens), do: do_parse(%Parser{tokens: tokens})
+  @spec parse(String.t) :: AST.t
+  def parse(expr) do
+    case Lexer.lex(expr) do
+      {:ok, tokens} -> do_parse(%Parser{tokens: tokens})
+      error         -> error
+    end
+  end
 
   @spec do_parse(Parser.t) :: AST.t
   defp do_parse(%Parser{tokens: []} = parser) do
@@ -39,6 +44,9 @@ defmodule Mi.Parser do
   end
 
   @spec parse_list(Parser.t) :: AST.t
+  @doc """
+    list  ::= "(", { sexpr } | statement, ")" ;
+  """
   defp parse_list(parser, list \\ [])
   defp parse_list(%Parser{tokens: [%Token{type: :cparen} | rest]}, list) do
     {rest, Enum.reverse(list)}
@@ -49,8 +57,16 @@ defmodule Mi.Parser do
   end
 
   @spec parse_atom(Parser.t) :: {[Token.t], AST.tnode | AST.t}
-  defp parse_atom(%Parser{tokens: [%Token{type: type} | rest] = tokens})
-    when is_operator(type), do: nil # TODO: parse expression
+  @doc """
+    atom ::= identifier
+           | number
+           | scientific-number
+           | string
+           | symbol
+           | operator ;
+  """
+  defp parse_atom(%Parser{tokens: [%Token{type: type} | rest]} = parser)
+    when is_operator(type), do: parse_expression(%{parser | tokens: rest}, type)
   defp parse_atom(%Parser{tokens: [%Token{type: :quote}, token | rest]} = parser) do
     # Quoted atom sometimes have a special case, otherwise it's just ignored
     case token.type do
@@ -77,5 +93,16 @@ defmodule Mi.Parser do
   defp parse_literal_list(%Parser{} = parser, list) do
     {rest, node} = parse_atom(parser)
     parse_literal_list(%{parser | tokens: rest}, [node | list])
+  end
+
+  @spec parse_expression(Parser.t, atom) :: {[Token.t], AST.Expression.t}
+  defp parse_expression(parser, operator, arguments \\ [])
+  defp parse_expression(%Parser{tokens: [%Token{type: :cparen} | rest]}, operator, arguments) do
+    {rest, %AST.Expression{operator: operator,
+                           arguments: Enum.reverse(arguments)}}
+  end
+  defp parse_expression(%Parser{} = parser, operator, arguments) do
+    {rest, node} = parse_atom(parser)
+    parse_expression(%{parser | tokens: rest}, operator, [node | arguments])
   end
 end
