@@ -50,7 +50,7 @@ defmodule Mi.Parser do
 
   @spec parse_atom(Parser.t) :: {[Token.t], AST.tnode | AST.t}
   defp parse_atom(%Parser{tokens: [%Token{type: type} | rest] = tokens})
-    when is_operator(type), do: nil
+    when is_operator(type), do: nil # TODO: parse expression
   defp parse_atom(%Parser{tokens: [%Token{type: :quote}, token | rest]} = parser) do
     # Quoted atom sometimes have a special case, otherwise it's just ignored
     case token.type do
@@ -65,7 +65,7 @@ defmodule Mi.Parser do
       :identifier -> {rest, %AST.Identifier{name: token.value}}
       :number     -> {rest, %AST.Number{value: token.value}}
       :string     -> {rest, %AST.String{value: token.value}}
-      _           -> nil
+      _           -> nil # TODO: error
     end
   end
 
