@@ -2,7 +2,7 @@
 This document containts Mi's grammar as it is used to parse source files.
 
 ```
-program ::= [ { list } ]
+program ::= [ { list } ] ;
 
 list  ::= "(", { sexpr } | statement, ")" ;
 sexpr ::= ( [ "'" ], atom | list ) | ;
@@ -15,7 +15,7 @@ identifier ::= letter, { letter | digit | "/" | "-" | "$" } ;
 operator   ::= "+" | "++" | "-" | "--" | "/" | "//" | "*" | "%" | "**" | "<"
              | ">" | "<=" | ">=" | "<<" | ">>" | ">>>" | "~" | "^" | "|" | "&"
              | "not" | "and" | "or" | "eq" | "delete" | "typeof" | "void"
-             | "new" | "instanceof" | "in" | "from"
+             | "new" | "instanceof" | "in" | "from" ;
 string     ::= '"', { ? all characters ? - '"' | '\"' }, '"' ;
 symbol     ::= ":", { letter | "_" | "-" | "+" | "*" | "/" | "%" | "^" | "@"
                     | "!" | "&" | "|" } ;
