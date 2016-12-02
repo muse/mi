@@ -35,7 +35,7 @@ defmodule Mi.Parser do
     do_parse(%{parser | tokens: rest, ast: [list | parser.ast]})
   end
   defp do_parse(%Parser{tokens: [token | _rest]}) do
-    {:error, "unexpected token `#{token}'"}
+    {:error, "unexpected token `#{token}', expecting `('"}
   end
 
   @spec parse_list(Parser.t) :: AST.t
