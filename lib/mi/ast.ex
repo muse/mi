@@ -42,10 +42,10 @@ defmodule Mi.AST do
   end
 
   defmodule Symbol do
-    @enforce_keys [:value]
-    defstruct [:value]
+    @enforce_keys [:name]
+    defstruct [:name]
 
-    @type t :: %__MODULE__{ value: charlist }
+    @type t :: %__MODULE__{ name: charlist }
   end
 
   defmodule Number do

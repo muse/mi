@@ -13,14 +13,13 @@ defmodule Mi.Parser do
     tokens: [Token.t]
   }
 
-  defmacro is_operator(token) do
+  defmacro is_operator(type) do
     quote do
-      unquote(token.type) in [:not, :and, :or, :eq, :delete, :typeof, :void,
-                              :new, :instanceof, :in, :from, :increment,
-                              :decrease, :intdivide, :power, :bshiftl,
-                              :ubshiftr, :bshiftr, :lteq, :gteq, :subtract,
-                              :add, :divide, :*, :modulo, :lt, :gt, :bnot,
-                              :bxor, :bor, :band]
+      unquote(type) in
+        [:not, :and, :or, :eq, :delete, :typeof, :void, :new, :instanceof, :in,
+        :from, :increment, :decrease, :intdivide, :power, :bshiftl, :ubshiftr,
+        :bshiftr, :lteq, :gteq, :subtract, :add, :divide, :*, :modulo, :lt, :gt,
+        :bnot, :bxor, :bor, :band]
     end
   end
 
@@ -50,9 +49,8 @@ defmodule Mi.Parser do
   end
 
   @spec parse_atom(Parser.t) :: {[Token.t], AST.tnode | AST.t}
-  defp parse_atom(%Parser{tokens: [token | rest] = tokens}) when is_operator(token) do
-    parse_expression(token, rest)
-  end
+  defp parse_atom(%Parser{tokens: [%Token{type: type} | rest] = tokens})
+    when is_operator(type), do: nil
   defp parse_atom(%Parser{tokens: [%Token{type: :quote}, token | rest]} = parser) do
     # Quoted atom sometimes have a special case, otherwise it's just ignored
     case token.type do
