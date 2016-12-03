@@ -31,7 +31,16 @@ defmodule MiParserTest do
                           %AST.Number{value: "3"}
                         ]
                       }]}
-      ] = ast
+      ] === ast
+    end
+
+    test "Use statements are parsed" do
+      {:ok, ast} = Parser.parse("((use \"http\") (use* \"http\" \"myhttp\"))")
+
+      assert [[
+        [%AST.Use{module: "http", name: "http"}],
+        [%AST.Use{module: "http", name: "myhttp"}]
+      ]] === ast
     end
   end
 end

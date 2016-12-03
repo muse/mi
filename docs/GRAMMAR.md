@@ -17,8 +17,6 @@ operator   ::= "+" | "++" | "-" | "--" | "/" | "//" | "*" | "%" | "**" | "<"
              | "not" | "and" | "or" | "eq" | "delete" | "typeof" | "void"
              | "new" | "instanceof" | "in" | "from" ;
 string     ::= '"', { ? all characters ? - '"' | '\"' }, '"' ;
-symbol     ::= ":", { letter | "_" | "-" | "+" | "*" | "/" | "%" | "^" | "@"
-                    | "!" | "&" | "|" } ;
 number ::= [ "-" ], { digit } | ( { digit }, ".", { digit } ) ;
 scientific-number ::= { number }, "e", [ "-" ], { digit } ;
 
@@ -26,7 +24,6 @@ atom ::= identifier
        | number
        | scientific-number
        | string
-       | symbol
        | operator ;
 
 statement ::= use

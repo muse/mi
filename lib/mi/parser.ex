@@ -6,7 +6,7 @@ defmodule Mi.Parser do
 
   alias Mi.{Parser, Lexer, Token, AST}
 
-  defstruct ast: [], tokens: []
+  defstruct ast: [], tokens: [], current: nil
 
   @type t :: %__MODULE__{
     ast: AST.t,
@@ -61,7 +61,7 @@ defmodule Mi.Parser do
     case token.type do
       :oparen     -> parse_literal_list(%{parser | tokens: rest})
       :identifier -> {rest, %AST.Symbol{name: token.value}}
-      _           -> parse_atom(%{parser | tokens: rest}) # No special quote case
+      _           -> parse_atom(%{parser | tokens: [token | rest]})
     end
   end
   defp parse_atom(%Parser{tokens: [token | rest]} = parser) do
@@ -70,6 +70,7 @@ defmodule Mi.Parser do
       :identifier -> {rest, %AST.Identifier{name: token.value}}
       :number     -> {rest, %AST.Number{value: token.value}}
       :string     -> {rest, %AST.String{value: token.value}}
+      :use        -> parse_use(%{parser | tokens: rest})
       _           -> nil # TODO: error
     end
   end
@@ -86,12 +87,23 @@ defmodule Mi.Parser do
 
   @spec parse_expression(Parser.t, atom, [AST.tnode]) :: {[Token.t], AST.Expression.t}
   defp parse_expression(parser, operator, arguments \\ [])
-  defp parse_expression(%Parser{tokens: [%Token{type: :cparen} | rest]} = parser, operator, arguments) do
+  defp parse_expression(%Parser{tokens: [%Token{type: :cparen} | rest]}, operator, arguments) do
     {rest, %AST.Expression{operator: operator,
                            arguments: Enum.reverse(arguments)}}
   end
   defp parse_expression(%Parser{} = parser, operator, arguments) do
     {rest, node} = parse_atom(parser)
     parse_expression(%{parser | tokens: rest}, operator, [node | arguments])
+  end
+
+  @spec parse_use(Parser.t) :: {[Token.t], AST.Use.t}
+  defp parse_use(%Parser{tokens: [%Token{type: :*},
+                                  %Token{type: :string} = module,
+                                  %Token{type: :string} = name | rest]}) do
+    {rest, %AST.Use{module: module.value, name: name.value}}
+  end
+  defp parse_use(%Parser{tokens: [%Token{type: :string} = module | rest]}) do
+
+    {rest, %AST.Use{module: module.value, name: module.value}}
   end
 end
