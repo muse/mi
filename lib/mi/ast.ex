@@ -38,26 +38,27 @@ defmodule Mi.AST do
     @enforce_keys [:name]
     defstruct [:name]
 
-    @type t :: %__MODULE__{ name: charlist }
+    @type t :: %__MODULE__{ name: String.t }
   end
 
   defmodule Symbol do
     @enforce_keys [:name]
     defstruct [:name]
 
-    @type t :: %__MODULE__{ name: charlist }
+    @type t :: %__MODULE__{ name: String.t }
   end
 
   defmodule Number do
+    @enforce_keys [:value]
     defstruct [:value]
 
-    @type t :: %__MODULE__{ value: charlist }
+    @type t :: %__MODULE__{ value: String.t }
   end
 
   defmodule String do
     @enforce_keys [:value]
     defstruct [:value]
 
-    @type t :: %__MODULE__{ value: charlist }
+    @type t :: %__MODULE__{ value: String.t }
   end
 end
