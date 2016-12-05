@@ -6,21 +6,26 @@ defmodule Mi.Parser do
 
   alias Mi.{Parser, Lexer, Token, AST}
 
-  defstruct ast: [], tokens: [], current: nil
+  defstruct ast: [], tokens: []
 
   @type t :: %__MODULE__{
     ast: AST.t,
     tokens: [Token.t]
   }
 
+  @operators [:not, :and, :or, :eq, :delete, :typeof, :void, :new, :instanceof,
+              :in, :from, :increment, :decrease, :intdivide, :power, :bshiftl,
+              :ubshiftr, :bshiftr, :lteq, :gteq, :subtract, :add, :divide, :*,
+              :modulo, :lt, :gt, :bnot, :bxor, :bor, :band]
+
+  @statements [:use, :lambda]
+
   defmacro is_operator(type) do
-    quote do
-      unquote(type) in
-        [:not, :and, :or, :eq, :delete, :typeof, :void, :new, :instanceof, :in,
-         :from, :increment, :decrease, :intdivide, :power, :bshiftl, :ubshiftr,
-         :bshiftr, :lteq, :gteq, :subtract, :add, :divide, :*, :modulo, :lt, :gt,
-         :bnot, :bxor, :bor, :band]
-    end
+    quote do: unquote(type) in @operators
+  end
+
+  defmacro is_statement(type) do
+    quote do: unquote(type) in @statements
   end
 
   @spec parse(String.t) :: AST.t
@@ -31,25 +36,30 @@ defmodule Mi.Parser do
     end
   end
 
-  @spec do_parse(Parser.t) :: AST.t
+  @spec do_parse(Parser.t) :: {:ok, AST.t} | {:error, String.t}
   defp do_parse(%Parser{tokens: []} = parser) do
     {:ok, parser.ast}
   end
   defp do_parse(%Parser{tokens: [%Token{type: :oparen} | rest]} = parser) do
-    {rest, list} = parse_list(%{parser | tokens: rest})
-    do_parse(%{parser | tokens: rest, ast: [list | parser.ast]})
+    {rest, node} = parse_list(%{parser | tokens: rest})
+    do_parse(%{parser | tokens: rest, ast: [node | parser.ast]})
   end
-  defp do_parse(%Parser{tokens: [token | _rest]}) do
+  defp do_parse(%Parser{tokens: [token | _]}) do
     {:error, "unexpected token `#{token}', expecting `('"}
   end
 
-  @spec parse_list(Parser.t) :: AST.t
-  defp parse_list(parser, list \\ [])
+  @spec parse_list(Parser.t) :: AST.t | AST.tnode
+  defp parse_list(%Parser{tokens: [%Token{type: type} | rest]} = parser) when is_operator(type),
+    do: parse_expression(%{parser | tokens: rest}, type)
+  defp parse_list(%Parser{tokens: [%Token{type: type} | _]} = parser) when is_statement(type),
+    do: parse_statement(parser)
+  defp parse_list(%Parser{} = parser),
+    do: parse_list(parser, [])
+
+  @spec parse_list(Parser.t, [AST.tnode]) :: AST.t
   defp parse_list(%Parser{tokens: [%Token{type: :cparen} | rest]}, list) do
     {rest, Enum.reverse(list)}
   end
-  defp parse_list(%Parser{tokens: [%Token{type: type} | rest]} = parser, _list)
-    when is_operator(type), do: parse_expression(%{parser | tokens: rest}, type)
   defp parse_list(%Parser{} = parser, list) do
     {rest, node} = parse_atom(parser)
     parse_list(%{parser | tokens: rest}, [node | list])
@@ -61,6 +71,7 @@ defmodule Mi.Parser do
     case token.type do
       :oparen     -> parse_literal_list(%{parser | tokens: rest})
       :identifier -> {rest, %AST.Symbol{name: token.value}}
+      :number     -> {rest, %AST.Symbol{name: token.value}}
       _           -> parse_atom(%{parser | tokens: [token | rest]})
     end
   end
@@ -72,6 +83,14 @@ defmodule Mi.Parser do
       :string     -> {rest, %AST.String{value: token.value}}
       :use        -> parse_use(%{parser | tokens: rest})
       _           -> nil # TODO: error
+    end
+  end
+
+  @spec parse_statement(Parser.t) :: AST.tnode
+  defp parse_statement(%Parser{tokens: [token | rest]} = parser) do
+    case token.type do
+      :use -> parse_use(%{parser | tokens: rest})
+      _    -> nil # TODO: error
     end
   end
 
@@ -99,11 +118,12 @@ defmodule Mi.Parser do
   @spec parse_use(Parser.t) :: {[Token.t], AST.Use.t}
   defp parse_use(%Parser{tokens: [%Token{type: :*},
                                   %Token{type: :string} = module,
-                                  %Token{type: :string} = name | rest]}) do
+                                  %Token{type: :string} = name,
+                                  %Token{type: :cparen} | rest]}) do
     {rest, %AST.Use{module: module.value, name: name.value}}
   end
-  defp parse_use(%Parser{tokens: [%Token{type: :string} = module | rest]}) do
-
+  defp parse_use(%Parser{tokens: [%Token{type: :string} = module,
+                                  %Token{type: :cparen} | rest]}) do
     {rest, %AST.Use{module: module.value, name: module.value}}
   end
 end

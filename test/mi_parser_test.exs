@@ -38,8 +38,8 @@ defmodule MiParserTest do
       {:ok, ast} = Parser.parse("((use \"http\") (use* \"http\" \"myhttp\"))")
 
       assert [[
-        [%AST.Use{module: "http", name: "http"}],
-        [%AST.Use{module: "http", name: "myhttp"}]
+        %AST.Use{module: "http", name: "http"},
+        %AST.Use{module: "http", name: "myhttp"}
       ]] === ast
     end
   end

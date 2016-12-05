@@ -3,7 +3,7 @@ defmodule Mi do
 
   alias Mi.{Parser, Lexer}
 
-  def main(_args) do
+  def main(_) do
     input =
       case IO.read(:stdio, :all) do
         {:error, reason} -> fatal_error("mi", reason)

@@ -87,7 +87,7 @@ defmodule Mi.Lexer do
 
   @spec lex_string(charlist, charlist) :: token_result | token_error
   defp lex_string(expr, acc \\ '')
-  defp lex_string([], _acc) do
+  defp lex_string([], _) do
     {:error, "unterminated string"}
   end
   defp lex_string([?\\, char | rest], acc) do
@@ -135,13 +135,13 @@ defmodule Mi.Lexer do
       [?^ = char | rest]  -> {:ok, {rest, {char, :bxor}}}
       [?| = char | rest]  -> {:ok, {rest, {char, :bor}}}
       [?& = char | rest]  -> {:ok, {rest, {char, :band}}}
-      [char | _rest] ->
+      [char | _] ->
         {:error, "unexpected token `#{[char]}'"}
     end
   end
 
   @spec skip_comment(charlist) :: charlist
   defp skip_comment([]), do: []
-  defp skip_comment([?\n | _rest] = expr), do: expr
-  defp skip_comment([_char | rest]), do: skip_comment(rest)
+  defp skip_comment([?\n | _] = expr), do: expr
+  defp skip_comment([_| rest]), do: skip_comment(rest)
 end
