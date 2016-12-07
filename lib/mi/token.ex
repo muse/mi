@@ -9,7 +9,7 @@ defmodule Mi.Token do
   defstruct [:value, :type, :line, :pos]
 
   @type t :: %__MODULE__{
-    value: charlist,
+    value: String.t,
     type: type,
     line: pos_integer,
     pos: pos_integer
