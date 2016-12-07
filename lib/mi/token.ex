@@ -54,7 +54,7 @@ defmodule Mi.Token do
 
     # Operators
     'not', 'and', 'or', 'eq', 'delete', 'typeof', 'void', 'new', 'instanceof',
-    'in', 'from'
+    'in'
   ]
 
   @spec new(%{pos: pos_integer, line: pos_integer}, any, type) :: Token.t

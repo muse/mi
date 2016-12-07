@@ -37,6 +37,21 @@ defmodule MiLexerTest do
               %Token{type: :string, value: ~s(I'm a seperate string!)}] = tokens
     end
 
+    # TODO: parse negative numbers (make unary minus operator or lex it as a
+    #       whole?), scientific numbers (2e9) and other bases (# or 0x?)
+    test "Number literals are recognized and read properly" do
+      {:ok, tokens} = Lexer.lex("0.45 2.3 5.3 1000000 86 0 1 00000")
+
+      assert [%Token{type: :number, value: "0.45"},
+              %Token{type: :number, value: "2.3"},
+              %Token{type: :number, value: "5.3"},
+              %Token{type: :number, value: "1000000"},
+              %Token{type: :number, value: "86"},
+              %Token{type: :number, value: "0"},
+              %Token{type: :number, value: "1"},
+              %Token{type: :number, value: "00000"}] = tokens
+    end
+
     test "Unterminated strings error" do
       {:error, reason} = Lexer.lex(~s("I'm an unterminated \\"string\\" over
       multiple lines))
@@ -54,8 +69,8 @@ defmodule MiLexerTest do
 
     test "Operators are recoginized properly" do
       {:ok, tokens} = Lexer.lex("""
-      +  ++  -  --  /  //  *  %  **  <  > <=  >=  <<  >>  >>>  ~  ^ & not
-      and  or  eq  delete  typeof  void  new instanceof  in  from
+      +  ++  -  --  /  //  *  %  **  <  > <=  >=  <<  >>  >>>  ~  ^ & not .
+      and  or  eq  delete  typeof  void  new instanceof  in
       """)
 
       assert [%Token{type: :add, value: "+"},
@@ -78,6 +93,7 @@ defmodule MiLexerTest do
               %Token{type: :bxor, value: "^"},
               %Token{type: :band, value: "&"},
               %Token{type: :not, value: "not"},
+              %Token{type: :dot, value: "."},
               %Token{type: :and, value: "and"},
               %Token{type: :or, value: "or"},
               %Token{type: :eq, value: "eq"},
@@ -86,8 +102,7 @@ defmodule MiLexerTest do
               %Token{type: :void, value: "void"},
               %Token{type: :new, value: "new"},
               %Token{type: :instanceof, value: "instanceof"},
-              %Token{type: :in, value: "in"},
-              %Token{type: :from, value: "from"}] = tokens
+              %Token{type: :in, value: "in"}] = tokens
     end
 
     test "Comments are skipped" do

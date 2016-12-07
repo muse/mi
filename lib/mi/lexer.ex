@@ -44,7 +44,7 @@ defmodule Mi.Lexer do
   defp do_lex(%Lexer{expr: [char | rest]} = lexer) do
     result =
       cond do
-        is_numeric_literal(char) -> lex_number(lexer.expr)
+        is_numeric_literal(char) and char !== ?. -> lex_number(lexer.expr)
         is_start_of_identifier(char) -> lex_identifier(lexer.expr)
         char === ?" -> lex_string(rest)
         :otherwise -> lex_symbol(lexer.expr)
@@ -112,6 +112,7 @@ defmodule Mi.Lexer do
   @spec lex_symbol(charlist) :: token_result
   defp lex_symbol(expr) do
     case expr do
+      [?. = char | rest]  -> {:ok, {rest, {char, :dot}}}
       [?( = char | rest]  -> {:ok, {rest, {char, :oparen}}}
       [?) = char | rest]  -> {:ok, {rest, {char, :cparen}}}
       [?' = char | rest]  -> {:ok, {rest, {char, :quote}}}
