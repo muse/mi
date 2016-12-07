@@ -13,12 +13,18 @@ defmodule Mi.Parser do
     tokens: [Token.t]
   }
 
-  @operators [:not, :and, :or, :eq, :delete, :typeof, :void, :new, :instanceof,
-              :in, :from, :increment, :decrease, :intdivide, :power, :bshiftl,
+  @unary_operators [:not, :delete, :typeof, :void, :new, :increment, :decrease,
+                    :bnot]
+
+  @operators [:and, :or, :eq, :instanceof, :in, :intdivide, :power, :bshiftl,
               :ubshiftr, :bshiftr, :lteq, :gteq, :subtract, :add, :divide, :*,
-              :modulo, :lt, :gt, :bnot, :bxor, :bor, :band]
+              :modulo, :lt, :gt, :bxor, :bor, :band, :dot | @unary_operators]
 
   @statements [:use, :lambda]
+
+  defmacro is_unary_operator(type) do
+    quote do: unquote(type) in @unary_operators
+  end
 
   defmacro is_operator(type) do
     quote do: unquote(type) in @operators
@@ -49,8 +55,8 @@ defmodule Mi.Parser do
   end
 
   @spec parse_list(Parser.t) :: AST.t | AST.tnode
-  defp parse_list(%Parser{tokens: [%Token{type: type} | rest]} = parser) when is_operator(type),
-    do: parse_expression(%{parser | tokens: rest}, type)
+  defp parse_list(%Parser{tokens: [%Token{type: type} = token | rest]} = parser) when is_operator(type),
+    do: parse_expression(%{parser | tokens: rest}, token)
   defp parse_list(%Parser{tokens: [%Token{type: type} | _]} = parser) when is_statement(type),
     do: parse_statement(parser)
   defp parse_list(%Parser{} = parser),
@@ -107,8 +113,15 @@ defmodule Mi.Parser do
   @spec parse_expression(Parser.t, atom, [AST.tnode]) :: {[Token.t], AST.Expression.t}
   defp parse_expression(parser, operator, arguments \\ [])
   defp parse_expression(%Parser{tokens: [%Token{type: :cparen} | rest]}, operator, arguments) do
-    {rest, %AST.Expression{operator: operator,
-                           arguments: Enum.reverse(arguments)}}
+    cond do
+      is_unary_operator(operator) and length(arguments) > 1 ->
+        {:error, "too many arguments for `#{operator}'"}
+      not is_unary_operator(operator) and length(arguments) < 2 ->
+        {:error, "not enough arguments for `#{operator}'"}
+      :otherwise ->
+        {rest, %AST.Expression{operator: operator.type,
+                               arguments: Enum.reverse(arguments)}}
+    end
   end
   defp parse_expression(%Parser{} = parser, operator, arguments) do
     {rest, node} = parse_atom(parser)
@@ -125,5 +138,8 @@ defmodule Mi.Parser do
   defp parse_use(%Parser{tokens: [%Token{type: :string} = module,
                                   %Token{type: :cparen} | rest]}) do
     {rest, %AST.Use{module: module.value, name: module.value}}
+  end
+  defp parse_use(%Parser{tokens: tokens}) do
+    IO.inspect tokens
   end
 end
