@@ -137,7 +137,7 @@ defmodule Mi.Lexer do
       [?| = char | rest]  -> {:ok, {rest, {char, :bor}}}
       [?& = char | rest]  -> {:ok, {rest, {char, :band}}}
       [char | _] ->
-        {:error, "unexpected token `#{[char]}'"}
+        {:error, "invalid token `#{[char]}'"}
     end
   end
 
