@@ -127,8 +127,11 @@ defmodule Mi.Parser do
     end
   end
   defp parse_expression(%Parser{} = parser, operator, arguments) do
-    {rest, node} = parse_atom(parser)
-    parse_expression(%{parser | tokens: rest}, operator, [node | arguments])
+    case parse_atom(parser) do
+      {:error, message} -> {:error, message}
+      {rest, node} ->
+        parse_expression(%{parser | tokens: rest}, operator, [node | arguments])
+    end
   end
 
   @spec parse_use(Parser.t) :: node_result
