@@ -13,6 +13,9 @@ defmodule Mi.Parser do
     tokens: [Token.t]
   }
 
+  @type tree_result :: {[Token.t], AST.t } | {:error, String.t}
+  @type node_result :: {[Token.t], AST.tnode} | {:error, String.t}
+
   @unary_operators [:not, :delete, :typeof, :void, :new, :increment, :decrease,
                     :bnot]
 
@@ -34,7 +37,7 @@ defmodule Mi.Parser do
     quote do: unquote(type) in @statements
   end
 
-  @spec parse(String.t) :: AST.t
+  @spec parse(String.t) :: {:ok, AST.t} | {:error, String.t}
   def parse(expr) do
     case Lexer.lex(expr) do
       {:ok, tokens} -> do_parse(%Parser{tokens: tokens})
@@ -57,7 +60,7 @@ defmodule Mi.Parser do
     {:error, error(token, "unexpected token `#{token}', expecting `('")}
   end
 
-  @spec parse_list(Parser.t) :: AST.t | AST.tnode
+  @spec parse_list(Parser.t) :: tree_result
   defp parse_list(%Parser{tokens: [%Token{type: type} = token | rest]} = parser) when is_operator(type),
     do: parse_expression(%{parser | tokens: rest}, token)
   defp parse_list(%Parser{tokens: [%Token{type: type} | _]} = parser) when is_statement(type),
@@ -65,7 +68,7 @@ defmodule Mi.Parser do
   defp parse_list(%Parser{} = parser),
     do: parse_list(parser, [])
 
-  @spec parse_list(Parser.t, [AST.tnode], boolean) :: AST.t
+  @spec parse_list(Parser.t, [AST.tnode], boolean) :: tree_result
   defp parse_list(parser, list, literal \\ false)
   defp parse_list(%Parser{tokens: [%Token{type: :cparen} | rest]}, list, true) do
     {rest, %AST.List{items: Enum.reverse(list)}}
@@ -81,7 +84,7 @@ defmodule Mi.Parser do
     end
   end
 
-  @spec parse_atom(Parser.t) :: {[Token.t], AST.tnode | AST.t}
+  @spec parse_atom(Parser.t) :: tree_result | node_result
   defp parse_atom(%Parser{tokens: [%Token{type: :quote}, token | rest]} = parser) do
     # Quoted atom sometimes have a special case, otherwise it's just ignored
     case token.type do
@@ -102,7 +105,7 @@ defmodule Mi.Parser do
     end
   end
 
-  @spec parse_statement(Parser.t) :: AST.tnode
+  @spec parse_statement(Parser.t) :: node_result
   defp parse_statement(%Parser{tokens: [token | rest]} = parser) do
     case token.type do
       :use -> parse_use(%{parser | tokens: rest})
@@ -110,7 +113,7 @@ defmodule Mi.Parser do
     end
   end
 
-  @spec parse_expression(Parser.t, atom, [AST.tnode]) :: {[Token.t], AST.Expression.t}
+  @spec parse_expression(Parser.t, atom, [AST.tnode]) :: node_result
   defp parse_expression(parser, operator, arguments \\ [])
   defp parse_expression(%Parser{tokens: [%Token{type: :cparen} | rest]}, operator, arguments) do
     cond do
@@ -128,7 +131,7 @@ defmodule Mi.Parser do
     parse_expression(%{parser | tokens: rest}, operator, [node | arguments])
   end
 
-  @spec parse_use(Parser.t) :: {[Token.t], AST.Use.t}
+  @spec parse_use(Parser.t) :: node_result
   defp parse_use(%Parser{tokens: [%Token{type: :*},
                                   %Token{type: :string} = module,
                                   %Token{type: :string} = name,
