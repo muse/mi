@@ -47,11 +47,14 @@ defmodule Mi.Parser do
     {:ok, parser.ast}
   end
   defp do_parse(%Parser{tokens: [%Token{type: :oparen} | rest]} = parser) do
-    {rest, node} = parse_list(%{parser | tokens: rest})
-    do_parse(%{parser | tokens: rest, ast: [node | parser.ast]})
+    case parse_list(%{parser | tokens: rest}) do
+      {:error, reason} -> {:error, reason}
+      {rest, node} ->
+        do_parse(%{parser | tokens: rest, ast: [node | parser.ast]})
+    end
   end
   defp do_parse(%Parser{tokens: [token | _]}) do
-    {:error, "unexpected token `#{token}', expecting `('"}
+    {:error, error(token, "unexpected token `#{token}', expecting `('")}
   end
 
   @spec parse_list(Parser.t) :: AST.t | AST.tnode
@@ -62,20 +65,27 @@ defmodule Mi.Parser do
   defp parse_list(%Parser{} = parser),
     do: parse_list(parser, [])
 
-  @spec parse_list(Parser.t, [AST.tnode]) :: AST.t
-  defp parse_list(%Parser{tokens: [%Token{type: :cparen} | rest]}, list) do
+  @spec parse_list(Parser.t, [AST.tnode], boolean) :: AST.t
+  defp parse_list(parser, list, literal \\ false)
+  defp parse_list(%Parser{tokens: [%Token{type: :cparen} | rest]}, list, true) do
+    {rest, %AST.List{items: Enum.reverse(list)}}
+  end
+  defp parse_list(%Parser{tokens: [%Token{type: :cparen} | rest]}, list, false) do
     {rest, Enum.reverse(list)}
   end
-  defp parse_list(%Parser{} = parser, list) do
-    {rest, node} = parse_atom(parser)
-    parse_list(%{parser | tokens: rest}, [node | list])
+  defp parse_list(%Parser{} = parser, list, literal) do
+    case parse_atom(parser) do
+      {:error, message} -> {:error, message}
+      {rest, node} ->
+        parse_list(%{parser | tokens: rest}, [node | list], literal)
+    end
   end
 
   @spec parse_atom(Parser.t) :: {[Token.t], AST.tnode | AST.t}
   defp parse_atom(%Parser{tokens: [%Token{type: :quote}, token | rest]} = parser) do
     # Quoted atom sometimes have a special case, otherwise it's just ignored
     case token.type do
-      :oparen     -> parse_literal_list(%{parser | tokens: rest})
+      :oparen     -> parse_list(%{parser | tokens: rest}, [], true)
       :identifier -> {rest, %AST.Symbol{name: token.value}}
       :number     -> {rest, %AST.Symbol{name: token.value}}
       _           -> parse_atom(%{parser | tokens: [token | rest]})
@@ -88,7 +98,7 @@ defmodule Mi.Parser do
       :number     -> {rest, %AST.Number{value: token.value}}
       :string     -> {rest, %AST.String{value: token.value}}
       :use        -> parse_use(%{parser | tokens: rest})
-      _           -> nil # TODO: error
+      _           -> {:error, error(token, "unexpected token #{token}")}
     end
   end
 
@@ -96,18 +106,8 @@ defmodule Mi.Parser do
   defp parse_statement(%Parser{tokens: [token | rest]} = parser) do
     case token.type do
       :use -> parse_use(%{parser | tokens: rest})
-      _    -> nil # TODO: error
+      _    -> {:error, error(token, "unexpected token #{token}")}
     end
-  end
-
-  @spec parse_literal_list(Parser.t) :: {[Token.t], AST.List.t}
-  defp parse_literal_list(parser, list \\ [])
-  defp parse_literal_list(%Parser{tokens: [%Token{type: :cparen} | rest]}, list) do
-    {rest, %AST.List{items: Enum.reverse(list)}}
-  end
-  defp parse_literal_list(%Parser{} = parser, list) do
-    {rest, node} = parse_atom(parser)
-    parse_literal_list(%{parser | tokens: rest}, [node | list])
   end
 
   @spec parse_expression(Parser.t, atom, [AST.tnode]) :: {[Token.t], AST.Expression.t}
@@ -141,5 +141,10 @@ defmodule Mi.Parser do
   end
   defp parse_use(%Parser{tokens: tokens}) do
     IO.inspect tokens
+  end
+
+  @spec error(Token.t, String.t) :: String.t
+  defp error(token, message) do
+    "#{token.line}:#{token.pos}: #{message}"
   end
 end
