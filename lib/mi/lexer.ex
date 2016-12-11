@@ -125,8 +125,8 @@ defmodule Mi.Lexer do
       [?>, ?> | rest]     -> {:ok, {rest, {">>", :bshiftr}}}
       [?<, ?= | rest]     -> {:ok, {rest, {"<=", :lteq}}}
       [?>, ?= | rest]     -> {:ok, {rest, {">=", :gteq}}}
-      [?- = char | rest]  -> {:ok, {rest, {char, :subtract}}}
-      [?+ = char | rest]  -> {:ok, {rest, {char, :add}}}
+      [?- = char | rest]  -> {:ok, {rest, {char, :minus}}}
+      [?+ = char | rest]  -> {:ok, {rest, {char, :plus}}}
       [?/ = char | rest]  -> {:ok, {rest, {char, :divide}}}
       [?* = char | rest]  -> {:ok, {rest, {char, :*}}}
       [?% = char | rest]  -> {:ok, {rest, {char, :modulo}}}

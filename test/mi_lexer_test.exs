@@ -73,9 +73,9 @@ defmodule MiLexerTest do
       and  or  eq  delete  typeof  void  new instanceof  in
       """)
 
-      assert [%Token{type: :add, value: "+"},
+      assert [%Token{type: :plus, value: "+"},
               %Token{type: :increment, value: "++"},
-              %Token{type: :subtract, value: "-"},
+              %Token{type: :minus, value: "-"},
               %Token{type: :decrease, value: "--"},
               %Token{type: :divide, value: "/"},
               %Token{type: :intdivide, value: "//"},
