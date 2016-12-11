@@ -43,7 +43,8 @@ defmodule Mi.Token do
     'define',
     'use',
     'loop',  # for, while
-    'cond',  # if
+    'cond',  # switch
+    'if',
     'case',
     'try',
     'catch',
