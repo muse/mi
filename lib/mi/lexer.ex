@@ -144,5 +144,5 @@ defmodule Mi.Lexer do
   @spec skip_comment(charlist) :: charlist
   defp skip_comment([]), do: []
   defp skip_comment([?\n | _] = expr), do: expr
-  defp skip_comment([_| rest]), do: skip_comment(rest)
+  defp skip_comment([_ | rest]), do: skip_comment(rest)
 end

@@ -7,8 +7,8 @@ defmodule Mi.AST do
                | Symbol.t
                | Number.t
                | String.t
-               | Use.t
                | Lambda.t
+               | Use.t
 
   defmodule List do
     defstruct [:items]
@@ -55,9 +55,11 @@ defmodule Mi.AST do
   end
 
   defmodule Lambda do
-    defstruct [:args, :body]
+    @enforce_keys [:args, :body]
+    defstruct [:name, :args, :body]
 
     @type t :: %__MODULE__{
+      name: String.t,
       args: [String.t],
       body: [AST.tnode]
     }

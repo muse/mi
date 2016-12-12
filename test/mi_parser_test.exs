@@ -42,5 +42,13 @@ defmodule MiParserTest do
         %AST.Use{module: "http", name: "myhttp"}
       ]] === ast
     end
+
+    test "Lambda statements are parsed" do
+      {:ok, ast} = Parser.parse("(lambda () 5)")
+
+      assert [[
+               %AST.Lambda{name: nil, args: [], body: %AST.Number{value: "5"}}
+             ]] === ast
+    end
   end
 end

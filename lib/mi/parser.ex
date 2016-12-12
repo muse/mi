@@ -107,8 +107,9 @@ defmodule Mi.Parser do
   @spec parse_statement(Parser.t) :: node_result
   defp parse_statement(%Parser{tokens: [token | rest]} = parser) do
     case token.type do
-      :use -> parse_use(%{parser | tokens: rest})
-      _    -> {:error, error(token, "unexpected token #{token}")}
+      :use    -> parse_use(%{parser | tokens: rest})
+      :lambda -> parse_lambda(%{parser | tokens: rest})
+      _       -> {:error, error(token, "unexpected token #{token}")}
     end
   end
 
@@ -144,8 +145,9 @@ defmodule Mi.Parser do
                                   %Token{type: :cparen} | rest]}) do
     {rest, %AST.Use{module: module.value, name: module.value}}
   end
-  defp parse_use(%Parser{tokens: tokens}) do
-    IO.inspect tokens
+
+  @spec parse_lambda(Parser.t) :: node_result
+  defp parse_lambda(parser) do
   end
 
   @spec error(Token.t, String.t) :: String.t
