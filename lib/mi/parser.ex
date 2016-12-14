@@ -57,7 +57,7 @@ defmodule Mi.Parser do
     end
   end
   defp do_parse(%Parser{tokens: [token | _]}) do
-    {:error, error(token, "unexpected token `#{token}', expecting `('")}
+    error(token, "unexpected token `#{token}', expecting `('")
   end
 
   @spec parse_list(Parser.t) :: tree_result
@@ -100,7 +100,7 @@ defmodule Mi.Parser do
       :identifier -> {rest, %AST.Identifier{name: token.value}}
       :number     -> {rest, %AST.Number{value: token.value}}
       :string     -> {rest, %AST.String{value: token.value}}
-      _           -> {:error, error(token, "unexpected token #{token}")}
+      _           -> error(token, "unexpected token #{token}")
     end
   end
 
@@ -108,8 +108,8 @@ defmodule Mi.Parser do
   defp parse_statement(%Parser{tokens: [token | rest]} = parser) do
     case token.type do
       :use    -> parse_use(%{parser | tokens: rest})
-      :lambda -> parse_lambda(%{parser | tokens: rest})
-      _       -> {:error, error(token, "unexpected token #{token}")}
+      :lambda -> nil
+      _       -> error(token, "unexpected token #{token}")
     end
   end
 
@@ -118,9 +118,9 @@ defmodule Mi.Parser do
   defp parse_expression(%Parser{tokens: [%Token{type: :cparen} | rest]}, operator, arguments) do
     cond do
       is_unary_operator(operator) and length(arguments) > 1 ->
-        {:error, error(operator, "too many arguments for `#{operator}'")}
+        error(operator, "too many arguments for `#{operator}'")
       not is_unary_operator(operator) and length(arguments) < 2 ->
-        {:error, error(operator, "not enough arguments for `#{operator}'")}
+        error(operator, "not enough arguments for `#{operator}'")
       :otherwise ->
         {rest, %AST.Expression{operator: operator.type,
                                arguments: Enum.reverse(arguments)}}
@@ -146,12 +146,8 @@ defmodule Mi.Parser do
     {rest, %AST.Use{module: module.value, name: module.value}}
   end
 
-  @spec parse_lambda(Parser.t) :: node_result
-  defp parse_lambda(parser) do
-  end
-
-  @spec error(Token.t, String.t) :: String.t
+  @spec error(Token.t, String.t) :: {:error, String.t}
   defp error(token, message) do
-    "#{token.line}:#{token.pos}: #{message}"
+    {:error, "#{token.line}:#{token.pos}: #{message}"}
   end
 end

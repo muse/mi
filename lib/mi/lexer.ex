@@ -56,16 +56,16 @@ defmodule Mi.Lexer do
         do_lex(%{lexer |
                  expr: rest,
                  tokens: [token | lexer.tokens],
-                 pos: lexer.pos + (to_string([token.value]) |> String.length)
+                 pos: lexer.pos + String.length(token.value)
                })
       {:error, reason} ->
-        {:error, error(lexer, reason)}
+        error(lexer, reason)
     end
   end
 
-  @spec error(Lexer.t, String.t) :: String.t
+  @spec error(Lexer.t, String.t) :: {:error, String.t}
   defp error(lexer, message) do
-    "#{lexer.line}:#{lexer.pos}: #{message}"
+    {:error, "#{lexer.line}:#{lexer.pos}: #{message}"}
   end
 
   @spec lex_identifier(charlist, charlist) :: token_result
