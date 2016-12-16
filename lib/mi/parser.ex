@@ -21,7 +21,7 @@ defmodule Mi.Parser do
 
   @operators [:and, :or, :eq, :instanceof, :in, :intdivide, :power, :bshiftl,
               :ubshiftr, :bshiftr, :lteq, :gteq, :minus, :plus, :divide, :*,
-              :modulo, :lt, :gt, :bxor, :bor, :band, :dot | @unary_operators]
+              :modulo, :lt, :gt, :bxor, :bor, :band, :dot, :ternary | @unary_operators]
 
   @statements [:use, :lambda]
 

@@ -69,7 +69,7 @@ defmodule MiLexerTest do
 
     test "Operators are recoginized properly" do
       {:ok, tokens} = Lexer.lex("""
-      +  ++  -  --  /  //  *  %  **  <  > <=  >=  <<  >>  >>>  ~  ^ & not .
+      +  ++  -  --  /  //  *  %  **  <  > <=  >=  <<  >>  >>>  ~  ^ & ? not .
       and  or  eq  delete  typeof  void  new instanceof  in
       """)
 
@@ -92,6 +92,7 @@ defmodule MiLexerTest do
               %Token{type: :bnot, value: "~"},
               %Token{type: :bxor, value: "^"},
               %Token{type: :band, value: "&"},
+              %Token{type: :ternary, value: "?"},
               %Token{type: :not, value: "not"},
               %Token{type: :dot, value: "."},
               %Token{type: :and, value: "and"},
