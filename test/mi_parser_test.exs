@@ -34,6 +34,21 @@ defmodule MiParserTest do
       ] === ast
     end
 
+    test "Expressions error accordingly" do
+      {:error, error} = Parser.parse("(* 1)")
+      assert String.contains?(error, "not enough arguments")
+
+      {:error, error} = Parser.parse("(typeof true false)")
+      assert String.contains?(error, "too many arguments")
+
+      {:error, error} = Parser.parse("(-)")
+      assert String.contains?(error, "missing argument(s)")
+
+      assert {:ok, _} = Parser.parse("(- 1)")
+      assert {:ok, _} = Parser.parse("(- 1 2)")
+      assert {:ok, _} = Parser.parse("(- 1 2 3)")
+    end
+
     test "Use statements are parsed" do
       {:ok, ast} = Parser.parse("((use \"http\") (use* \"http\" \"myhttp\"))")
 

@@ -7,6 +7,7 @@ defmodule Mi.AST do
                | Symbol.t
                | Number.t
                | String.t
+               | Bool.t
                | Lambda.t
                | Use.t
 
@@ -48,6 +49,13 @@ defmodule Mi.AST do
   end
 
   defmodule String do
+    @enforce_keys [:value]
+    defstruct [:value]
+
+    @type t :: %__MODULE__{ value: String.t }
+  end
+
+  defmodule Bool do
     @enforce_keys [:value]
     defstruct [:value]
 

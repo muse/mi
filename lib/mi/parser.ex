@@ -17,23 +17,30 @@ defmodule Mi.Parser do
   @type node_result :: {[Token.t], AST.tnode} | {:error, String.t}
 
   @unary_operators [:not, :delete, :typeof, :void, :new, :increment, :decrease,
-                    :bnot]
+                    :bnot, :minus]
 
-  @operators [:and, :or, :eq, :instanceof, :in, :intdivide, :power, :bshiftl,
-              :ubshiftr, :bshiftr, :lteq, :gteq, :minus, :plus, :divide, :*,
-              :modulo, :lt, :gt, :bxor, :bor, :band, :dot, :ternary | @unary_operators]
+  @multi_arity_operators [:and, :or, :eq, :instanceof, :in, :intdivide, :power,
+                          :bshiftl, :ubshiftr, :bshiftr, :lteq, :gteq, :minus,
+                          :plus, :divide, :*, :modulo, :lt, :gt, :bxor, :bor,
+                          :band, :dot, :ternary]
+
+  @operators @unary_operators ++ @multi_arity_operators
 
   @statements [:use, :lambda]
 
-  defmacro is_unary_operator(type) do
+  defmacrop is_unary_operator(type) do
     quote do: unquote(type) in @unary_operators
   end
 
-  defmacro is_operator(type) do
+  defmacrop is_multi_arity_operator(type) do
+    quote do: unquote(type) in @multi_arity_operators
+  end
+
+  defmacrop is_operator(type) do
     quote do: unquote(type) in @operators
   end
 
-  defmacro is_statement(type) do
+  defmacrop is_statement(type) do
     quote do: unquote(type) in @statements
   end
 
@@ -100,6 +107,8 @@ defmodule Mi.Parser do
       :identifier -> {rest, %AST.Identifier{name: token.value}}
       :number     -> {rest, %AST.Number{value: token.value}}
       :string     -> {rest, %AST.String{value: token.value}}
+      :true       -> {rest, %AST.Bool{value: :true}}
+      :false      -> {rest, %AST.Bool{value: :false}}
       _           -> error(token, "unexpected token #{token}")
     end
   end
@@ -117,9 +126,15 @@ defmodule Mi.Parser do
   defp parse_expression(parser, operator, arguments \\ [])
   defp parse_expression(%Parser{tokens: [%Token{type: :cparen} | rest]}, operator, arguments) do
     cond do
-      is_unary_operator(operator) and length(arguments) > 1 ->
+      length(arguments) === 0 ->
+        error(operator, "missing argument(s) for `#{operator}'")
+      is_unary_operator(operator.type) and is_multi_arity_operator(operator.type) ->
+        # Operators that can have 1 or more arguments like `-`
+        {rest, %AST.Expression{operator: operator.type,
+                               arguments: Enum.reverse(arguments)}}
+      is_unary_operator(operator.type) and length(arguments) > 1 ->
         error(operator, "too many arguments for `#{operator}'")
-      not is_unary_operator(operator) and length(arguments) < 2 ->
+      not is_unary_operator(operator.type) and length(arguments) < 2 ->
         error(operator, "not enough arguments for `#{operator}'")
       :otherwise ->
         {rest, %AST.Expression{operator: operator.type,
