@@ -50,12 +50,12 @@ defmodule MiParserTest do
     end
 
     test "Use statements are parsed" do
-      {:ok, ast} = Parser.parse("((use \"http\") (use* \"http\" 'myhttp))")
+      {:ok, ast} = Parser.parse("(use \"http\") (use* \"http\" 'myhttp)")
 
-      assert [[
+      assert [
         %AST.Use{module: "http", name: "http"},
         %AST.Use{module: "http", name: "myhttp"}
-      ]] === ast
+      ] === ast
     end
 
     test "Use statements error accordingly" do
