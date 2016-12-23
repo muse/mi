@@ -12,8 +12,7 @@ atom ::= identifier
        | number
        | string
        | boolean
-       | null
-       | operator ;
+       | null ;
 
 keyword ::= "lambda" | "define" | "use" | "loop" | "cond" | "if" | "case"
           | "try" | "catch" | "throw" | "not" | "and" | "or" | "eq" | "delete"
