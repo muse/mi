@@ -26,8 +26,8 @@ string ::= '"', { ? all characters ? - '"' | '\"' }, '"' ;
 boolean ::= "true" | "false" ;
 null ::= "nil" ;
 
-letter ::= ( "a" | ... | "z" ) | ( "A" | ... | "Z" ) ;
-identifier ::= ( letter, { letter | digit | "/" | "-" | "$" } ) - reserved-keyword ;
+letter ::= ( "a" | ... | "z" ) | ( "A" | ... | "Z" ) | "$" ;
+identifier ::= ( letter, { letter | digit | "/" | "-" } ) - reserved-keyword ;
 
 operator ::= "+" | "++" | "-" | "--" | "/" | "//" | "*" | "%" | "**" | "<"
            | ">" | "<=" | ">=" | "<<" | ">>" | ">>>" | "~" | "^" | "|" | "&"
