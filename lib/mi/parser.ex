@@ -26,7 +26,7 @@ defmodule Mi.Parser do
 
   @operators @unary_operators ++ @multi_arity_operators
 
-  @statements [:use, :define]
+  @statements [:lambda, :define, :use]
 
   defmacrop is_unary(operator) do
     quote do: unquote(operator) in @unary_operators
@@ -49,12 +49,17 @@ defmodule Mi.Parser do
     {:error, "#{token.line}:#{token.pos}: #{message}"}
   end
 
-  @spec expect([Token.t], atom) :: {:ok, Token.t, [Token.t]} | {:error, String.t}
-  defp expect([%Token{type: type} = token | rest], expected_type) when type === expected_type do
+  @spec expect([Token.t], atom | String.t) :: {:ok, Token.t, [Token.t]} | {:error, String.t}
+  defp expect([%Token{value: value} = token | rest], expected)
+  when is_binary(expected) and value === expected do
     {:ok, rest, token}
   end
-  defp expect([token | _], expected_type) do
-    error(token, "unexpected token '#{token}`, expecting #{expected_type}")
+  defp expect([%Token{type: type} = token | rest], expected)
+  when is_atom(expected) and type === expected do
+    {:ok, rest, token}
+  end
+  defp expect([token | _], expected) do
+    error(token, "unexpected token '#{token}`, expecting `#{expected}'")
   end
 
   @spec parse(String.t) :: {:ok, AST.t} | {:error, String.t}
@@ -84,9 +89,11 @@ defmodule Mi.Parser do
   end
 
   @spec parse_list(Parser.t) :: tree_result
-  defp parse_list(%Parser{tokens: [%Token{type: type} = token | rest]} = parser) when is_operator(type),
+  defp parse_list(%Parser{tokens: [%Token{type: type} = token | rest]} = parser)
+  when is_operator(type),
     do: parse_expression(%{parser | tokens: rest}, token)
-  defp parse_list(%Parser{tokens: [%Token{type: type} | _]} = parser) when is_statement(type),
+  defp parse_list(%Parser{tokens: [%Token{type: type} | _]} = parser)
+  when is_statement(type),
     do: parse_statement(parser)
   defp parse_list(%Parser{} = parser),
     do: parse_list(parser, [])
@@ -135,8 +142,9 @@ defmodule Mi.Parser do
   @spec parse_statement(Parser.t) :: node_result
   defp parse_statement(%Parser{tokens: [token | rest]} = parser) do
     case token.type do
-      :use    -> parse_use(%{parser | tokens: rest})
+      :lambda -> parse_lambda(%{parser | tokens: rest})
       :define -> parse_define(%{parser | tokens: rest})
+      :use    -> parse_use(%{parser | tokens: rest})
       _       -> error(token, "unexpected token `#{token}'")
     end
   end
@@ -168,29 +176,64 @@ defmodule Mi.Parser do
     end
   end
 
+  # An argument list is a list of identifiers used in lambda and function
+  # definitions.
+  @spec parse_arg_list([Token.t]) :: [AST.Identifier.t]
+  defp parse_arg_list([%Token{type: :oparen} | rest]) do
+    parse_arg_list(rest, [])
+  end
+  defp parse_arg_list([token | _]) do
+    error(token, "expecting argument list, got `#{token}'")
+  end
+  @spec parse_arg_list([Token.t], [AST.Identifier.t]) :: [AST.Identifier.t]
+  defp parse_arg_list([%Token{type: :cparen} | rest], list) do
+    {:ok, rest, Enum.reverse(list)}
+  end
+  defp parse_arg_list([%Token{type: :identifier} = token | rest], list) do
+    parse_arg_list(rest, [%AST.Identifier{name: token.value} | list])
+  end
+  defp parse_arg_list([token | _], _) do
+    error(token, "unexpected token `#{token}' in argument list")
+  end
+
+  @spec parse_lambda(Parser.t) :: node_result
+  defp parse_lambda(%Parser{tokens: [%Token{type: :*} | rest]} = parser) do
+    with {:ok, rest, name} <- expect(rest, :identifier),
+         {:ok, rest, args} <- parse_arg_list(rest),
+         {:ok, rest, body} <- parse_atom(%{parser | tokens: rest}),
+         {:ok, rest, _} <- expect(rest, ")"),
+      do: {:ok, rest, %AST.Lambda{name: name.value, args: args, body: body}}
+  end
+  defp parse_lambda(%Parser{} = parser) do
+    with {:ok, rest, args} <- parse_arg_list(parser.tokens),
+         {:ok, rest, body} <- parse_atom(%{parser | tokens: rest}),
+         {:ok, rest, _} <- expect(rest, ")"),
+      do: {:ok, rest, %AST.Lambda{args: args, body: body}}
+  end
+
+  @spec parse_define(Parser.t) :: node_result
+  defp parse_define(%Parser{tokens: [%Token{type: :*} | rest]} = parser) do
+    parse_define(%{parser | tokens: rest}, true)
+  end
+  defp parse_define(%Parser{} = parser, is_default \\ false) do
+    with {:ok, rest, name}  <- expect(parser.tokens, :identifier),
+         {:ok, rest, value} <- parse_atom(%{parser | tokens: rest}),
+         {:ok, rest, _}     <- expect(rest, ")"),
+      do: {:ok, rest, %AST.Define{name: name.value, value: value, is_default: is_default}}
+  end
+
   @spec parse_use(Parser.t) :: node_result
   defp parse_use(%Parser{tokens: [%Token{type: :*} | rest]} = parser) do
     # TODO: improve error messages here. currently throws errors about
     #       unexpected )
     with {:ok, rest, module} <- expect(rest, :string),
          {:ok, rest, %AST.Symbol{name: name}} <- parse_atom(%{parser | tokens: rest}),
-         {:ok, rest, _} <- expect(rest, :cparen),
+         {:ok, rest, _} <- expect(rest, ")"),
       do: {:ok, rest, %AST.Use{module: module.value, name: name}}
   end
   defp parse_use(%Parser{} = parser) do
     with {:ok, rest, module} <- expect(parser.tokens, :string),
-         {:ok, rest, _}      <- expect(rest, :cparen),
+         {:ok, rest, _}      <- expect(rest, ")"),
       do: {:ok, rest, %AST.Use{module: module.value, name: module.value}}
-  end
-
-  @spec parse_define(Parser.t) :: node_result
-  defp parse_define(%Parser{tokens: [%Token{type: :*} | rest]} = parser) do
-      parse_define(%{parser | tokens: rest}, true)
-  end
-  defp parse_define(%Parser{} = parser, is_default \\ false) do
-    with {:ok, rest, name} <- expect(parser.tokens, :identifier),
-         {:ok, rest, value} <- parse_atom(%{parser | tokens: rest}),
-         {:ok, rest, _} <- expect(rest, :cparen),
-      do: {:ok, rest, %AST.Define{name: name.value, value: value, is_default: is_default}}
   end
 end

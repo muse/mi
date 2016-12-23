@@ -49,6 +49,33 @@ defmodule MiParserTest do
       assert {:ok, _} = Parser.parse("(- 1 2 3)")
     end
 
+    test "Lambda statements are parsed" do
+      {:ok, ast} = Parser.parse("""
+      (lambda (a b) (* a b))
+      (lambda* named () 5)
+      """)
+
+      assert [
+        %AST.Lambda{name: nil,
+                    args: [%AST.Identifier{name: "a"},
+                           %AST.Identifier{name: "b"}],
+                    body: %AST.Expression{operator: :*, arguments: [
+                                             %AST.Identifier{name: "a"},
+                                             %AST.Identifier{name: "b"},
+                                           ]}},
+        %AST.Lambda{name: "named", args: [], body: %AST.Number{value: "5"}}
+      ] === ast
+    end
+
+    test "Define statements are parsed" do
+      {:ok, ast} = Parser.parse("(define a 5) (define* b 6)")
+
+      assert [
+        %AST.Define{name: "a", value: %AST.Number{value: "5"}, is_default: false},
+        %AST.Define{name: "b", value: %AST.Number{value: "6"}, is_default: true},
+      ] === ast
+    end
+
     test "Use statements are parsed" do
       {:ok, ast} = Parser.parse("(use \"http\") (use* \"http\" 'myhttp)")
 
@@ -63,15 +90,6 @@ defmodule MiParserTest do
       assert {:error, _} = Parser.parse("(use* \"http\" myhttp)")
       assert {:error, _} = Parser.parse("(use* \"http\")")
       assert {:error, _} = Parser.parse("(use* \"http\" 'myhttp \"extra string\")")
-    end
-
-    test "Define statements are parsed" do
-      {:ok, ast} = Parser.parse("(define a 5) (define* b 6)")
-
-      assert [
-        %AST.Define{name: "a", value: %AST.Number{value: "5"}, is_default: false},
-        %AST.Define{name: "b", value: %AST.Number{value: "6"}, is_default: true},
-      ] === ast
     end
   end
 end

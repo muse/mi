@@ -48,5 +48,5 @@ use    ::= "use", ( [ "*" ], string, "'", identifier ) | string ;
 define ::= "define", [ "*" ], identifier, sexpr ;
 if     ::= "if", sexpr, sexpr, [ sexpr ] ;
 defun  ::= "defun", identifier, arg-list, list ;
-lambda ::= "lambda", [ identifier ], arg-list, sexpr ;
+lambda ::= "lambda", [ "*", identifier ], arg-list, sexpr ;
 ```
