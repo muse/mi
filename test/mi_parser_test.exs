@@ -115,5 +115,39 @@ defmodule MiParserTest do
           false_body: %AST.String{value: "thought so"}}
       ] === ast
     end
+
+    test "Defun statements are parsed" do
+      {:ok, ast} = Parser.parse("""
+      (defun factorial (n)
+        (if (eq n 0)
+          0
+          (* x (fact (- x 1)))))
+      """)
+
+      assert [
+        %AST.Function{
+          name: "factorial",
+          args: [%AST.Identifier{name: "n"}],
+          body: %AST.If{
+            condition: %AST.Expression{
+              operator: :eq,
+              arguments: [%AST.Identifier{name: "n"}, %AST.Number{value: "0"}]},
+            true_body: %AST.Number{value: "0"},
+            false_body: %AST.Expression{
+              operator: :*,
+              arguments: [
+                %AST.Identifier{name: "x"},
+                [%AST.Identifier{name: "fact"},
+                 %AST.Expression{
+                   operator: :minus,
+                   arguments: [%AST.Identifier{name: "x"},
+                               %AST.Number{value: "1"}]}
+                ]
+              ]
+            }
+          }
+        }
+      ] === ast
+    end
   end
 end

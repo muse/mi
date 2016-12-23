@@ -41,6 +41,7 @@ defmodule Mi.Token do
   @keywords [
     'lambda',
     'define',
+    'defun',
     'use',
     'loop',  # for, while
     'cond',  # switch

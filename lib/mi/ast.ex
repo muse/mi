@@ -13,6 +13,7 @@ defmodule Mi.AST do
                | Variable.t
                | Use.t
                | If.t
+               | Function.t
 
   defmodule List do
     defstruct [:items]
@@ -109,6 +110,17 @@ defmodule Mi.AST do
       condition: AST.tnode,
       true_body: [AST.tnode],
       false_body: [AST.tnode]
+    }
+  end
+
+  defmodule Function do
+    @enforce_keys [:name, :args, :body]
+    defstruct [:name, :args, :body]
+
+    @type t :: %__MODULE__{
+      name: String.t,
+      args: [String.t],
+      body: [AST.tnode]
     }
   end
 end
