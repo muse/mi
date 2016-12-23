@@ -67,7 +67,7 @@ defmodule Mi.Parser do
 
   @spec do_parse(Parser.t) :: {:ok, AST.t} | {:error, String.t}
   defp do_parse(%Parser{tokens: []} = parser) do
-    {:ok, parser.ast}
+    {:ok, Enum.reverse(parser.ast)}
   end
   defp do_parse(%Parser{tokens: [%Token{type: :oparen} | rest]} = parser) do
     case parse_list(%{parser | tokens: rest}) do
@@ -184,7 +184,13 @@ defmodule Mi.Parser do
   end
 
   @spec parse_define(Parser.t) :: node_result
-  defp parse_define(%Parser{}) do
-    nil
+  defp parse_define(%Parser{tokens: [%Token{type: :*} | rest]} = parser) do
+      parse_define(%{parser | tokens: rest}, true)
+  end
+  defp parse_define(%Parser{} = parser, is_default \\ false) do
+    with {:ok, rest, name} <- expect(parser.tokens, :identifier),
+         {:ok, rest, value} <- parse_atom(%{parser | tokens: rest}),
+         {:ok, rest, _} <- expect(rest, :cparen),
+      do: {:ok, rest, %AST.Define{name: name.value, value: value, is_default: is_default}}
   end
 end

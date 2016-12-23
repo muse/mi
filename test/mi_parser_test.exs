@@ -64,5 +64,14 @@ defmodule MiParserTest do
       assert {:error, _} = Parser.parse("(use* \"http\")")
       assert {:error, _} = Parser.parse("(use* \"http\" 'myhttp \"extra string\")")
     end
+
+    test "Define statements are parsed" do
+      {:ok, ast} = Parser.parse("(define a 5) (define* b 6)")
+
+      assert [
+        %AST.Define{name: "a", value: %AST.Number{value: "5"}, is_default: false},
+        %AST.Define{name: "b", value: %AST.Number{value: "6"}, is_default: true},
+      ] === ast
+    end
   end
 end
