@@ -59,7 +59,7 @@ defmodule Mi.Parser do
     {:ok, rest, token}
   end
   defp expect([token | _], expected) do
-    error(token, "unexpected token '#{token}`, expecting `#{expected}'")
+    error(token, "unexpected token `#{token}', expecting `#{expected}'")
   end
 
   @spec parse(String.t) :: {:ok, AST.t} | {:error, String.t}
