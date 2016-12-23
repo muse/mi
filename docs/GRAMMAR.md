@@ -4,13 +4,12 @@ This document containts Mi's grammar as it is used to parse source files.
 ```
 program ::= [ { list } ] ;
 
-list  ::= "(", { sexpr } | statement, ")" ;
-sexpr ::= ( [ "'" ], atom | list ) | ;
+list  ::= "(", { sexpr } | statement | expresion | , ")" ;
+sexpr ::= [ "'" ], atom | list ;
 comment ::= ";", { ? all characters ? - ? newline ? }, ? newline ? ;
 
 atom ::= identifier
        | number
-       | scientific-number
        | string
        | boolean
        | null
@@ -23,12 +22,9 @@ reserved-keyword ::= boolean | null | keyword ;
 
 digit  ::= "0" | ... | "9" ;
 number ::= [ "-" ], { digit } | ( { digit }, ".", { digit } ) ;
-scientific-number ::= { number }, "e", [ "-" ], { digit } ;
 
 string ::= '"', { ? all characters ? - '"' | '\"' }, '"' ;
-
 boolean ::= "true" | "false" ;
-
 null ::= "nil" ;
 
 letter ::= ( "a" | ... | "z" ) | ( "A" | ... | "Z" ) ;
@@ -38,6 +34,7 @@ operator ::= "+" | "++" | "-" | "--" | "/" | "//" | "*" | "%" | "**" | "<"
            | ">" | "<=" | ">=" | "<<" | ">>" | ">>>" | "~" | "^" | "|" | "&"
            | "not" | "and" | "or" | "eq" | "delete" | "typeof" | "void"
            | "new" | "instanceof" | "in" ;
+expression ::= operator, { sexpr } ;
 
 statement ::= use
             | define
@@ -47,7 +44,7 @@ statement ::= use
 
 arg-list ::= "(", [ { identifier } ], ")" ;
 
-use    ::= "use", [ "*" ], list | string ;
+use    ::= "use", ( [ "*" ], string, "'", identifier ) | string ;
 define ::= "define", [ "*" ], identifier, sexpr ;
 if     ::= "if", sexpr, sexpr, [ sexpr ] ;
 defun  ::= "defun", identifier, arg-list, list ;
