@@ -203,13 +203,13 @@ defmodule Mi.Parser do
     with {:ok, rest, name} <- expect(rest, :identifier),
          {:ok, rest, args} <- parse_arg_list(rest),
          {:ok, rest, body} <- parse_atom(%{parser | tokens: rest}),
-         {:ok, rest, _} <- expect(rest, ")"),
+         {:ok, rest, _}    <- expect(rest, ")"),
       do: {:ok, rest, %AST.Lambda{name: name.value, args: args, body: body}}
   end
   defp parse_lambda(%Parser{} = parser) do
     with {:ok, rest, args} <- parse_arg_list(parser.tokens),
          {:ok, rest, body} <- parse_atom(%{parser | tokens: rest}),
-         {:ok, rest, _} <- expect(rest, ")"),
+         {:ok, rest, _}    <- expect(rest, ")"),
       do: {:ok, rest, %AST.Lambda{args: args, body: body}}
   end
 
