@@ -8,7 +8,9 @@ defmodule Mi.AST do
                | Number.t
                | String.t
                | Bool.t
+               | Nil.t
                | Lambda.t
+               | Define.t
                | Use.t
 
   defmodule List do
@@ -62,6 +64,12 @@ defmodule Mi.AST do
     @type t :: %__MODULE__{ value: String.t }
   end
 
+  defmodule Nil do
+    defstruct []
+
+    @type t :: %__MODULE__{}
+  end
+
   defmodule Lambda do
     @enforce_keys [:args, :body]
     defstruct [:name, :args, :body]
@@ -70,6 +78,16 @@ defmodule Mi.AST do
       name: String.t,
       args: [String.t],
       body: [AST.tnode]
+    }
+  end
+
+  defmodule Define do
+    @enforce_keys [:name, :is_default]
+    defstruct [:name, :value, :is_default]
+
+    @type t :: %__MODULE__{
+      name: String.t,
+      value: String.t
     }
   end
 

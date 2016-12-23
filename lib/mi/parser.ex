@@ -26,14 +26,14 @@ defmodule Mi.Parser do
 
   @operators @unary_operators ++ @multi_arity_operators
 
-  @statements [:use, :lambda]
+  @statements [:use, :define]
 
-  defmacrop is_unary_operator(type) do
-    quote do: unquote(type) in @unary_operators
+  defmacrop is_unary(operator) do
+    quote do: unquote(operator) in @unary_operators
   end
 
-  defmacrop is_multi_arity_operator(type) do
-    quote do: unquote(type) in @multi_arity_operators
+  defmacrop is_multi_arity(operator) do
+    quote do: unquote(operator) in @multi_arity_operators
   end
 
   defmacrop is_operator(type) do
@@ -42,6 +42,19 @@ defmodule Mi.Parser do
 
   defmacrop is_statement(type) do
     quote do: unquote(type) in @statements
+  end
+
+  @spec error(Token.t, String.t) :: {:error, String.t}
+  defp error(token, message) do
+    {:error, "#{token.line}:#{token.pos}: #{message}"}
+  end
+
+  @spec expect([Token.t], atom) :: {:ok, Token.t, [Token.t]} | {:error, String.t}
+  defp expect([%Token{type: type} = token | rest], expected_type) when type === expected_type do
+    {:ok, rest, token}
+  end
+  defp expect([token | _], expected_type) do
+    error(token, "unexpected token '#{token}`, expecting #{expected_type}")
   end
 
   @spec parse(String.t) :: {:ok, AST.t} | {:error, String.t}
@@ -59,9 +72,12 @@ defmodule Mi.Parser do
   defp do_parse(%Parser{tokens: [%Token{type: :oparen} | rest]} = parser) do
     case parse_list(%{parser | tokens: rest}) do
       {:error, reason} -> {:error, reason}
-      {rest, node} ->
+      {:ok, rest, node} ->
         do_parse(%{parser | tokens: rest, ast: [node | parser.ast]})
     end
+  end
+  defp do_parse(%Parser{tokens: [%Token{type: :cparen} = token | _]}) do
+    error(token, "mismatched `)'")
   end
   defp do_parse(%Parser{tokens: [token | _]}) do
     error(token, "unexpected token `#{token}', expecting `('")
@@ -78,15 +94,15 @@ defmodule Mi.Parser do
   @spec parse_list(Parser.t, [AST.tnode], boolean) :: tree_result
   defp parse_list(parser, list, literal \\ false)
   defp parse_list(%Parser{tokens: [%Token{type: :cparen} | rest]}, list, true) do
-    {rest, %AST.List{items: Enum.reverse(list)}}
+    {:ok, rest, %AST.List{items: Enum.reverse(list)}}
   end
   defp parse_list(%Parser{tokens: [%Token{type: :cparen} | rest]}, list, false) do
-    {rest, Enum.reverse(list)}
+    {:ok, rest, list |> Enum.reverse |> List.flatten}
   end
   defp parse_list(%Parser{} = parser, list, literal) do
     case parse_atom(parser) do
       {:error, message} -> {:error, message}
-      {rest, node} ->
+      {:ok, rest, node} ->
         parse_list(%{parser | tokens: rest}, [node | list], literal)
     end
   end
@@ -96,20 +112,23 @@ defmodule Mi.Parser do
     # Quoted atom sometimes have a special case, otherwise it's just ignored
     case token.type do
       :oparen     -> parse_list(%{parser | tokens: rest}, [], true)
-      :identifier -> {rest, %AST.Symbol{name: token.value}}
-      :number     -> {rest, %AST.Symbol{name: token.value}}
-      _           -> parse_atom(%{parser | tokens: [token | rest]})
+      :identifier -> {:ok, rest, %AST.Symbol{name: token.value}}
+      :number     -> {:ok, rest, %AST.Symbol{name: token.value}}
+      _           ->
+        # TODO: warn about unnecessary quote
+        parse_atom(%{parser | tokens: [token | rest]})
     end
   end
   defp parse_atom(%Parser{tokens: [token | rest]} = parser) do
     case token.type do
       :oparen     -> parse_list(%{parser | tokens: rest})
-      :identifier -> {rest, %AST.Identifier{name: token.value}}
-      :number     -> {rest, %AST.Number{value: token.value}}
-      :string     -> {rest, %AST.String{value: token.value}}
-      :true       -> {rest, %AST.Bool{value: :true}}
-      :false      -> {rest, %AST.Bool{value: :false}}
-      _           -> error(token, "unexpected token #{token}")
+      :identifier -> {:ok, rest, %AST.Identifier{name: token.value}}
+      :number     -> {:ok, rest, %AST.Number{value: token.value}}
+      :string     -> {:ok, rest, %AST.String{value: token.value}}
+      :true       -> {:ok, rest, %AST.Bool{value: "true"}}
+      :false      -> {:ok, rest, %AST.Bool{value: "false"}}
+      :nil        -> {:ok, rest, %AST.Nil{}}
+      _           -> error(token, "unexpected token `#{token}'")
     end
   end
 
@@ -117,8 +136,8 @@ defmodule Mi.Parser do
   defp parse_statement(%Parser{tokens: [token | rest]} = parser) do
     case token.type do
       :use    -> parse_use(%{parser | tokens: rest})
-      :lambda -> nil
-      _       -> error(token, "unexpected token #{token}")
+      :define -> parse_define(%{parser | tokens: rest})
+      _       -> error(token, "unexpected token `#{token}'")
     end
   end
 
@@ -128,41 +147,44 @@ defmodule Mi.Parser do
     cond do
       length(arguments) === 0 ->
         error(operator, "missing argument(s) for `#{operator}'")
-      is_unary_operator(operator.type) and is_multi_arity_operator(operator.type) ->
+      is_unary(operator.type) and is_multi_arity(operator.type) ->
         # Operators that can have 1 or more arguments like `-`
-        {rest, %AST.Expression{operator: operator.type,
-                               arguments: Enum.reverse(arguments)}}
-      is_unary_operator(operator.type) and length(arguments) > 1 ->
+        {:ok, rest, %AST.Expression{operator: operator.type,
+                                    arguments: Enum.reverse(arguments)}}
+      is_unary(operator.type) and length(arguments) > 1 ->
         error(operator, "too many arguments for `#{operator}'")
-      not is_unary_operator(operator.type) and length(arguments) < 2 ->
+      is_multi_arity(operator.type) and length(arguments) < 2 ->
         error(operator, "not enough arguments for `#{operator}'")
       :otherwise ->
-        {rest, %AST.Expression{operator: operator.type,
-                               arguments: Enum.reverse(arguments)}}
+        {:ok, rest, %AST.Expression{operator: operator.type,
+                                    arguments: Enum.reverse(arguments)}}
     end
   end
   defp parse_expression(%Parser{} = parser, operator, arguments) do
     case parse_atom(parser) do
       {:error, message} -> {:error, message}
-      {rest, node} ->
+      {:ok, rest, node} ->
         parse_expression(%{parser | tokens: rest}, operator, [node | arguments])
     end
   end
 
   @spec parse_use(Parser.t) :: node_result
-  defp parse_use(%Parser{tokens: [%Token{type: :*},
-                                  %Token{type: :string} = module,
-                                  %Token{type: :string} = name,
-                                  %Token{type: :cparen} | rest]}) do
-    {rest, %AST.Use{module: module.value, name: name.value}}
+  defp parse_use(%Parser{tokens: [%Token{type: :*} | rest]} = parser) do
+    # TODO: improve error messages here. currently throws errors about
+    #       unexpected )
+    with {:ok, rest, module} <- expect(rest, :string),
+         {:ok, rest, %AST.Symbol{name: name}} <- parse_atom(%{parser | tokens: rest}),
+         {:ok, rest, _} <- expect(rest, :cparen),
+      do: {:ok, rest, %AST.Use{module: module.value, name: name}}
   end
-  defp parse_use(%Parser{tokens: [%Token{type: :string} = module,
-                                  %Token{type: :cparen} | rest]}) do
-    {rest, %AST.Use{module: module.value, name: module.value}}
+  defp parse_use(%Parser{} = parser) do
+    with {:ok, rest, module} <- expect(parser.tokens, :string),
+         {:ok, rest, _}      <- expect(rest, :cparen),
+      do: {:ok, rest, %AST.Use{module: module.value, name: module.value}}
   end
 
-  @spec error(Token.t, String.t) :: {:error, String.t}
-  defp error(token, message) do
-    {:error, "#{token.line}:#{token.pos}: #{message}"}
+  @spec parse_define(Parser.t) :: node_result
+  defp parse_define(%Parser{}) do
+    nil
   end
 end
