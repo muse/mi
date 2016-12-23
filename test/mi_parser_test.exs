@@ -91,5 +91,29 @@ defmodule MiParserTest do
       assert {:error, _} = Parser.parse("(use* \"http\")")
       assert {:error, _} = Parser.parse("(use* \"http\" 'myhttp \"extra string\")")
     end
+
+    test "If statements are parsed" do
+      {:ok, ast} = Parser.parse("""
+      (if (not true) something-wrong)
+      (if (eq "pie" "cake")
+        "what?"
+        "thought so")
+      """)
+
+      assert [
+        %AST.If{condition: %AST.Expression{operator: :not,
+                                           arguments: [%AST.Bool{value:
+                                                                 "true"}]},
+                true_body: %AST.Identifier{name: "something-wrong"}},
+        %AST.If{
+          condition: %AST.Expression{operator: :eq,
+                                     arguments: [
+                                       %AST.String{value: "pie"},
+                                       %AST.String{value: "cake"}
+                                     ]},
+          true_body: %AST.String{value: "what?"},
+          false_body: %AST.String{value: "thought so"}}
+      ] === ast
+    end
   end
 end

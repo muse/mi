@@ -12,6 +12,7 @@ defmodule Mi.AST do
                | Lambda.t
                | Define.t
                | Use.t
+               | If.t
 
   defmodule List do
     defstruct [:items]
@@ -97,6 +98,17 @@ defmodule Mi.AST do
     @type t :: %__MODULE__{
       module: String.t,
       name: String.t
+    }
+  end
+
+  defmodule If do
+    @enforce_keys [:condition, :true_body]
+    defstruct [:condition, :true_body, :false_body]
+
+    @type t :: %__MODULE__{
+      condition: AST.tnode,
+      true_body: [AST.tnode],
+      false_body: [AST.tnode]
     }
   end
 end

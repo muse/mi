@@ -26,7 +26,7 @@ defmodule Mi.Parser do
 
   @operators @unary_operators ++ @multi_arity_operators
 
-  @statements [:lambda, :define, :use]
+  @statements [:lambda, :define, :use, :if]
 
   defmacrop is_unary(operator) do
     quote do: unquote(operator) in @unary_operators
@@ -145,6 +145,7 @@ defmodule Mi.Parser do
       :lambda -> parse_lambda(%{parser | tokens: rest})
       :define -> parse_define(%{parser | tokens: rest})
       :use    -> parse_use(%{parser | tokens: rest})
+      :if     -> parse_if(%{parser | tokens: rest})
       _       -> error(token, "unexpected token `#{token}'")
     end
   end
@@ -235,5 +236,21 @@ defmodule Mi.Parser do
     with {:ok, rest, module} <- expect(parser.tokens, :string),
          {:ok, rest, _}      <- expect(rest, ")"),
       do: {:ok, rest, %AST.Use{module: module.value, name: module.value}}
+  end
+
+  @spec parse_if(Parser.t) :: node_result
+  defp parse_if(%Parser{} = parser) do
+    with {:ok, rest, condition} <- parse_atom(parser),
+         {:ok, rest, true_body} <- parse_atom(%{parser | tokens: rest}) do
+      case rest do
+        [%Token{type: :cparen} | rest] ->
+          {:ok, rest, %AST.If{condition: condition, true_body: true_body}}
+        _ ->
+          with {:ok, rest, false_body} <- parse_atom(%{parser | tokens: rest}),
+               {:ok, rest, _}          <- expect(rest, ")"),
+            do: {:ok, rest, %AST.If{condition: condition, true_body: true_body,
+                                    false_body: false_body}}
+      end
+    end
   end
 end
