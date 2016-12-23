@@ -106,11 +106,11 @@ defmodule Mi.Parser do
   defp parse_list(%Parser{tokens: [%Token{type: :cparen} | rest]}, list, false) do
     {:ok, rest, list |> Enum.reverse |> List.flatten}
   end
-  defp parse_list(%Parser{} = parser, list, literal) do
+  defp parse_list(%Parser{} = parser, list, literal?) do
     case parse_atom(parser) do
       {:error, message} -> {:error, message}
       {:ok, rest, node} ->
-        parse_list(%{parser | tokens: rest}, [node | list], literal)
+        parse_list(%{parser | tokens: rest}, [node | list], literal?)
     end
   end
 
@@ -216,11 +216,11 @@ defmodule Mi.Parser do
   defp parse_define(%Parser{tokens: [%Token{type: :*} | rest]} = parser) do
     parse_define(%{parser | tokens: rest}, true)
   end
-  defp parse_define(%Parser{} = parser, is_default \\ false) do
+  defp parse_define(%Parser{} = parser, default? \\ false) do
     with {:ok, rest, name}  <- expect(parser.tokens, :identifier),
          {:ok, rest, value} <- parse_atom(%{parser | tokens: rest}),
          {:ok, rest, _}     <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Define{name: name.value, value: value, is_default: is_default}}
+      do: {:ok, rest, %AST.Define{name: name.value, value: value, is_default: default?}}
   end
 
   @spec parse_use(Parser.t) :: node_result
