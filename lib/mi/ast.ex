@@ -10,7 +10,7 @@ defmodule Mi.AST do
                | Bool.t
                | Nil.t
                | Lambda.t
-               | Define.t
+               | Variable.t
                | Use.t
                | If.t
 
@@ -82,7 +82,7 @@ defmodule Mi.AST do
     }
   end
 
-  defmodule Define do
+  defmodule Variable do
     @enforce_keys [:name, :is_default]
     defstruct [:name, :value, :is_default]
 

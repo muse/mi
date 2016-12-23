@@ -178,7 +178,7 @@ defmodule Mi.Parser do
   end
 
   # An argument list is a list of identifiers used in lambda and function
-  # definitions.
+  # definitions
   @spec parse_arg_list([Token.t]) :: [AST.Identifier.t]
   defp parse_arg_list([%Token{type: :oparen} | rest]) do
     parse_arg_list(rest, [])
@@ -220,7 +220,7 @@ defmodule Mi.Parser do
     with {:ok, rest, name}  <- expect(parser.tokens, :identifier),
          {:ok, rest, value} <- parse_atom(%{parser | tokens: rest}),
          {:ok, rest, _}     <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Define{name: name.value, value: value, is_default: default?}}
+      do: {:ok, rest, %AST.Variable{name: name.value, value: value, is_default: default?}}
   end
 
   @spec parse_use(Parser.t) :: node_result
