@@ -15,6 +15,7 @@ defmodule Mi.AST do
                | If.t
                | Ternary.t
                | Function.t
+               | Object.t
 
   defmodule List do
     defstruct [:items]
@@ -136,5 +137,12 @@ defmodule Mi.AST do
       parameters: [String.t],
       body: [AST.tnode]
     }
+  end
+
+  defmodule Object do
+    @enforce_keys [:value]
+    defstruct [:value]
+
+    @type t :: %__MODULE__{ value: map }
   end
 end

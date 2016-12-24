@@ -181,5 +181,18 @@ defmodule MiParserTest do
         }
       ] === ast
     end
+
+    test "Object literals are parsed" do
+      {:ok, ast} = Parser.parse("""
+      (object ('n 5 'm 10))
+      """)
+
+      assert [
+        %AST.Object{
+          value: [%AST.Symbol{name: "n"}, %AST.Number{value: "5"},
+                  %AST.Symbol{name: "m"}, %AST.Number{value: "10"}]
+        }
+      ] === ast
+    end
   end
 end

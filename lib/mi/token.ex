@@ -42,6 +42,7 @@ defmodule Mi.Token do
     'lambda',
     'define',
     'defun',
+    'object',
     'use',
     'loop',  # for, while
     'cond',  # switch

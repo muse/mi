@@ -4,6 +4,8 @@ defmodule Mi.Parser do
   structure.
   """
 
+  require Integer
+
   alias Mi.{Parser, Lexer, Token, AST}
 
   defstruct ast: [], tokens: []
@@ -25,7 +27,7 @@ defmodule Mi.Parser do
 
   @operators @unary_operators ++ @multi_arity_operators
 
-  @statements [:lambda, :define, :use, :if, :ternary, :defun]
+  @statements [:lambda, :define, :use, :if, :ternary, :defun, :object]
 
   defmacrop is_unary(operator) do
     quote do: unquote(operator) in @unary_operators
@@ -144,6 +146,7 @@ defmodule Mi.Parser do
       :lambda  -> parse_lambda(%{parser | tokens: rest})
       :define  -> parse_define(%{parser | tokens: rest})
       :use     -> parse_use(%{parser | tokens: rest})
+      :object  -> parse_object(%{parser | tokens: rest})
       :if      -> parse_if(%{parser | tokens: rest})
       :ternary -> parse_ternary(%{parser | tokens: rest})
       :defun   -> parse_defun(%{parser | tokens: rest})
@@ -304,5 +307,15 @@ defmodule Mi.Parser do
          {:ok, rest, _}          <- expect(rest, ")"),
       do: {:ok, rest, %AST.Function{name: name.value, parameters: parameters,
                                     body: body}}
+  end
+
+  defp parse_object(%Parser{tokens: [token | _]} = parser) do
+    with {:ok, rest, value} when is_list(value) <- parse_list(parser) do
+      if Integer.is_even(length(value)) do
+        {:ok, rest, %AST.Object{value: value}}
+      else
+        error(token, "invalid amount of arguments for object (must be even)")
+      end
+    end
   end
 end
