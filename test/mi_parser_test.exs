@@ -21,7 +21,7 @@ defmodule MiParserTest do
 
       assert [
         %AST.Expression{
-          operator: :plus,
+          operator: :+,
           arguments: [%AST.Number{value: "1"},
                       %AST.Number{value: "2"},
                       %AST.Expression{
@@ -144,7 +144,7 @@ defmodule MiParserTest do
                 %AST.Identifier{name: "x"},
                 [%AST.Identifier{name: "fact"},
                  %AST.Expression{
-                   operator: :minus,
+                   operator: :-,
                    arguments: [%AST.Identifier{name: "x"},
                                %AST.Number{value: "1"}]}
                 ]

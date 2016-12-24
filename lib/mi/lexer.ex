@@ -112,30 +112,31 @@ defmodule Mi.Lexer do
   @spec lex_symbol(charlist) :: token_result
   defp lex_symbol(expr) do
     case expr do
-      [?. = char | rest]  -> {:ok, {rest, {char, :dot}}}
+      [?. = char | rest]  -> {:ok, {rest, {char, :.}}}
       [?( = char | rest]  -> {:ok, {rest, {char, :oparen}}}
       [?) = char | rest]  -> {:ok, {rest, {char, :cparen}}}
       [?' = char | rest]  -> {:ok, {rest, {char, :quote}}}
-      [?+, ?+ | rest]     -> {:ok, {rest, {"++", :increment}}}
-      [?-, ?- | rest]     -> {:ok, {rest, {"--", :decrease}}}
-      [?/, ?/ | rest]     -> {:ok, {rest, {"//", :intdivide}}}
-      [?*, ?* | rest]     -> {:ok, {rest, {"**", :power}}}
-      [?<, ?< | rest]     -> {:ok, {rest, {"<<", :bshiftl}}}
-      [?>, ?>, ?> | rest] -> {:ok, {rest, {">>>", :ubshiftr}}}
-      [?>, ?> | rest]     -> {:ok, {rest, {">>", :bshiftr}}}
-      [?<, ?= | rest]     -> {:ok, {rest, {"<=", :lteq}}}
-      [?>, ?= | rest]     -> {:ok, {rest, {">=", :gteq}}}
-      [?- = char | rest]  -> {:ok, {rest, {char, :minus}}}
-      [?+ = char | rest]  -> {:ok, {rest, {char, :plus}}}
-      [?/ = char | rest]  -> {:ok, {rest, {char, :divide}}}
+      [?+, ?+ | rest]     -> {:ok, {rest, {"++", :++}}}
+      [?-, ?- | rest]     -> {:ok, {rest, {"--", :--}}}
+      [?/, ?/ | rest]     -> {:ok, {rest, {"//", :"//"}}}
+      [?*, ?* | rest]     -> {:ok, {rest, {"**", :"**"}}}
+      [?<, ?< | rest]     -> {:ok, {rest, {"<<", :"<<"}}}
+      [?>, ?>, ?> | rest] -> {:ok, {rest, {">>>", :>>>}}}
+      [?>, ?> | rest]     -> {:ok, {rest, {">>", :">>"}}}
+      [?<, ?= | rest]     -> {:ok, {rest, {"<=", :<=}}}
+      [?>, ?= | rest]     -> {:ok, {rest, {">=", :>=}}}
+      [?- = char | rest]  -> {:ok, {rest, {char, :-}}}
+      [?+ = char | rest]  -> {:ok, {rest, {char, :+}}}
+      [?/ = char | rest]  -> {:ok, {rest, {char, :/}}}
       [?* = char | rest]  -> {:ok, {rest, {char, :*}}}
-      [?% = char | rest]  -> {:ok, {rest, {char, :modulo}}}
-      [?< = char | rest]  -> {:ok, {rest, {char, :lt}}}
-      [?> = char | rest]  -> {:ok, {rest, {char, :gt}}}
-      [?~ = char | rest]  -> {:ok, {rest, {char, :bnot}}}
-      [?^ = char | rest]  -> {:ok, {rest, {char, :bxor}}}
-      [?| = char | rest]  -> {:ok, {rest, {char, :bor}}}
-      [?& = char | rest]  -> {:ok, {rest, {char, :band}}}
+      [?% = char | rest]  -> {:ok, {rest, {char, :%}}}
+      [?< = char | rest]  -> {:ok, {rest, {char, :<}}}
+      [?> = char | rest]  -> {:ok, {rest, {char, :>}}}
+      [?~ = char | rest]  -> {:ok, {rest, {char, :"~"}}}
+      [?^ = char | rest]  -> {:ok, {rest, {char, :^}}}
+      [?| = char | rest]  -> {:ok, {rest, {char, :|}}}
+      [?& = char | rest]  -> {:ok, {rest, {char, :&}}}
+      [?= = char | rest]  -> {:ok, {rest, {char, :=}}}
       [?? = char | rest]  -> {:ok, {rest, {char, :ternary}}}
       [char | _] ->
         {:error, "invalid token `#{[char]}'"}

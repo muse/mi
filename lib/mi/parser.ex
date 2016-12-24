@@ -16,17 +16,16 @@ defmodule Mi.Parser do
   @type tree_result :: {[Token.t], AST.t } | {:error, String.t}
   @type node_result :: {[Token.t], AST.tnode} | {:error, String.t}
 
-  @unary_operators [:not, :delete, :typeof, :void, :new, :increment, :decrease,
-                    :bnot, :minus]
+  @unary_operators [:not, :delete, :typeof, :void, :new, :++, :--,
+                    :bnot, :-]
 
-  @multi_arity_operators [:and, :or, :eq, :instanceof, :in, :intdivide, :power,
-                          :bshiftl, :ubshiftr, :bshiftr, :lteq, :gteq, :minus,
-                          :plus, :divide, :*, :modulo, :lt, :gt, :bxor, :bor,
-                          :band, :dot, :ternary]
+  @multi_arity_operators [:and, :or, :eq, :instanceof, :in, :"//", :"**", :"<<",
+                          :>>>, :">>", :<=, :>=, :-, :+, :/, :*, :%, :<, :>, :^,
+                          :|, :&, :.]
 
   @operators @unary_operators ++ @multi_arity_operators
 
-  @statements [:lambda, :define, :use, :if, :defun]
+  @statements [:lambda, :define, :use, :if, :ternary, :defun]
 
   defmacrop is_unary(operator) do
     quote do: unquote(operator) in @unary_operators
