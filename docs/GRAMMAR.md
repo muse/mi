@@ -29,9 +29,9 @@ null ::= "nil" ;
 letter ::= ( "a" | ... | "z" ) | ( "A" | ... | "Z" ) | "$" ;
 identifier ::= ( letter, { letter | digit | "/" | "-" } ) - reserved-keyword ;
 
-operator ::= "+" | "++" | "-" | "--" | "/" | "//" | "*" | "%" | "**" | "<"
-           | ">" | "<=" | ">=" | "<<" | ">>" | ">>>" | "~" | "^" | "|" | "&"
-           | "not" | "and" | "or" | "eq" | "delete" | "typeof" | "void"
+operator ::= "+" | "++" | "-" | "--" | "/" | "//" | "*" | "%" | "**" | "<" | "."
+           | "=" | ">" | "<=" | ">=" | "<<" | ">>" | ">>>" | "~" | "^" | "|"
+           | "&" | "not" | "and" | "or" | "eq" | "delete" | "typeof" | "void"
            | "new" | "instanceof" | "in" ;
 expression ::= operator, { sexpr } ;
 
