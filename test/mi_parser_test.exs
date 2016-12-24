@@ -121,7 +121,7 @@ defmodule MiParserTest do
     end
 
     test "Ternary statements are parsed" do
-      {:ok, ast} = Parser.parse("(? (eq 2 2) 'ok 'world-on-fire)")
+      {:ok, ast} = Parser.parse("(?: (eq 2 2) 'ok 'world-on-fire)")
 
       assert [
         %AST.Ternary{
