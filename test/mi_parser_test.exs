@@ -60,15 +60,15 @@ defmodule MiParserTest do
         %AST.Lambda{name: nil,
                     lexical_this?: true,
                     parameters: ["a", "b"],
-                    body: %AST.Expression{operator: :*,
+                    body: [%AST.Expression{operator: :*,
                                           arguments: [
                                              %AST.Identifier{name: "a"},
                                              %AST.Identifier{name: "b"},
-                                          ]}},
+                                          ]}]},
         %AST.Lambda{name: nil, lexical_this?: false, parameters: [],
-                    body: %AST.Identifier{name: "this"}},
+                    body: [%AST.Identifier{name: "this"}]},
         %AST.Lambda{name: "named", lexical_this?: true, parameters: [],
-                    body: %AST.Number{value: "5"}}
+                    body: [%AST.Number{value: "5"}]}
       ] === ast
     end
 
@@ -127,13 +127,17 @@ defmodule MiParserTest do
         (if (eq n 0)
           0
           (* x (fact (- x 1)))))
+
+      (defun is-5 (n)
+        (define x 5)
+        (eq n 5))
       """)
 
       assert [
         %AST.Function{
           name: "factorial",
           parameters: ["n"],
-          body: %AST.If{
+          body: [%AST.If{
             condition: %AST.Expression{
               operator: :eq,
               arguments: [%AST.Identifier{name: "n"}, %AST.Number{value: "0"}]},
@@ -150,7 +154,18 @@ defmodule MiParserTest do
                 ]
               ]
             }
-          }
+          }]
+        },
+        %AST.Function{
+          name: "is-5",
+          parameters: ["n"],
+          body: [
+            %AST.Variable{name: "x", value: %AST.Number{value: "5"},
+                          default?: false},
+            %AST.Expression{operator: :eq,
+                            arguments: [%AST.Identifier{name: "n"},
+                                        %AST.Number{value: "5"}]},
+          ]
         }
       ] === ast
     end

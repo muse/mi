@@ -197,6 +197,31 @@ defmodule Mi.Parser do
     error(token, "unexpected token `#{token}' in argument list")
   end
 
+  # Body refers to a function. This is so we can do this:
+  #
+  # (defun is-5 (n)
+  #   (define x 5)
+  #   (eq n 5))
+  #
+  # Instead of having to wrap it in a list like this:
+  #
+  # (defun is-5 (n)
+  #   ((define x 5)
+  #    (eq n 5)))
+  #
+  @spec parse_body(Parser.t, [AST.tnode]) :: [AST.tnode]
+  defp parse_body(parser, nodes \\ [])
+  defp parse_body(%Parser{tokens: [%Token{type: :cparen} | _]} = parser, nodes) do
+    {:ok, parser.tokens, Enum.reverse(nodes)} # Let parent functions handle `)`
+  end
+  defp parse_body(%Parser{} = parser, nodes) do
+    case parse_atom(parser) do
+      {:error, message} -> {:error, message}
+      {:ok, rest, node} ->
+        parse_body(%{parser | tokens: rest}, [node | nodes])
+    end
+  end
+
   @spec parse_lambda(Parser.t) :: node_result
   defp parse_lambda(%Parser{tokens: [%Token{type: :*} | rest]} = parser) do
     parse_lambda(%{parser | tokens: rest}, false)
@@ -211,7 +236,7 @@ defmodule Mi.Parser do
       end
 
     with {:ok, rest, parameters} <- parse_arg_list(rest),
-         {:ok, rest, body}       <- parse_atom(%{parser | tokens: rest}),
+         {:ok, rest, body}       <- parse_body(%{parser | tokens: rest}),
          {:ok, rest, _}          <- expect(rest, ")"),
       do: {:ok, rest, %AST.Lambda{name: name, parameters: parameters, body: body,
                                   lexical_this?: lexical_this?}}
@@ -260,11 +285,20 @@ defmodule Mi.Parser do
     end
   end
 
+  @spec parse_ternary(Parser.t) :: node_result
+  defp parse_ternary(%Parser{} = parser) do
+    with {:ok, rest, condition} <- parse_atom(parser),
+         {:ok, rest, true_body} <- parse_atom(%{parser | tokens: rest}),
+         {:ok, rest, false_body} <- parse_atom(%{parser | tokens: rest}),
+      do: {:ok, rest, %AST.Ternary{condition: condition, true_body: true_body,
+                                   false_body: false_body}}
+  end
+
   @spec parse_defun(Parser.t) :: node_result
   defp parse_defun(%Parser{} = parser) do
     with {:ok, rest, name}       <- expect(parser.tokens, :identifier),
          {:ok, rest, parameters} <- parse_arg_list(rest),
-         {:ok, rest, body}       <- parse_atom(%{parser | tokens: rest}),
+         {:ok, rest, body}       <- parse_body(%{parser | tokens: rest}),
          {:ok, rest, _}          <- expect(rest, ")"),
       do: {:ok, rest, %AST.Function{name: name.value, parameters: parameters,
                                     body: body}}
