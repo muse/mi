@@ -59,16 +59,15 @@ defmodule MiParserTest do
       assert [
         %AST.Lambda{name: nil,
                     lexical_this?: true,
-                    args: [%AST.Identifier{name: "a"},
-                           %AST.Identifier{name: "b"}],
+                    parameters: ["a", "b"],
                     body: %AST.Expression{operator: :*,
                                           arguments: [
                                              %AST.Identifier{name: "a"},
                                              %AST.Identifier{name: "b"},
                                           ]}},
-        %AST.Lambda{name: nil, lexical_this?: false, args: [],
+        %AST.Lambda{name: nil, lexical_this?: false, parameters: [],
                     body: %AST.Identifier{name: "this"}},
-        %AST.Lambda{name: "named", lexical_this?: true, args: [],
+        %AST.Lambda{name: "named", lexical_this?: true, parameters: [],
                     body: %AST.Number{value: "5"}}
       ] === ast
     end
@@ -133,7 +132,7 @@ defmodule MiParserTest do
       assert [
         %AST.Function{
           name: "factorial",
-          args: [%AST.Identifier{name: "n"}],
+          parameters: ["n"],
           body: %AST.If{
             condition: %AST.Expression{
               operator: :eq,

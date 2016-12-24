@@ -187,12 +187,12 @@ defmodule Mi.Parser do
   defp parse_arg_list([token | _]) do
     error(token, "expecting argument list, got `#{token}'")
   end
-  @spec parse_arg_list([Token.t], [AST.Identifier.t]) :: [AST.Identifier.t]
+  @spec parse_arg_list([Token.t], [String.t]) :: [String.t]
   defp parse_arg_list([%Token{type: :cparen} | rest], list) do
     {:ok, rest, Enum.reverse(list)}
   end
   defp parse_arg_list([%Token{type: :identifier} = token | rest], list) do
-    parse_arg_list(rest, [%AST.Identifier{name: token.value} | list])
+    parse_arg_list(rest, [token.value | list])
   end
   defp parse_arg_list([token | _], _) do
     error(token, "unexpected token `#{token}' in argument list")
@@ -210,10 +210,10 @@ defmodule Mi.Parser do
         _           -> {nil, parser.tokens}
       end
 
-    with {:ok, rest, args} <- parse_arg_list(rest),
-         {:ok, rest, body} <- parse_atom(%{parser | tokens: rest}),
-         {:ok, rest, _}    <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Lambda{name: name, args: args, body: body,
+    with {:ok, rest, parameters} <- parse_arg_list(rest),
+         {:ok, rest, body}       <- parse_atom(%{parser | tokens: rest}),
+         {:ok, rest, _}          <- expect(rest, ")"),
+      do: {:ok, rest, %AST.Lambda{name: name, parameters: parameters, body: body,
                                   lexical_this?: lexical_this?}}
   end
 
@@ -261,10 +261,11 @@ defmodule Mi.Parser do
 
   @spec parse_defun(Parser.t) :: node_result
   defp parse_defun(%Parser{} = parser) do
-    with {:ok, rest, name} <- expect(parser.tokens, :identifier),
-         {:ok, rest, args} <- parse_arg_list(rest),
-         {:ok, rest, body} <- parse_atom(%{parser | tokens: rest}),
-         {:ok, rest, _}    <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Function{name: name.value, args: args, body: body}}
+    with {:ok, rest, name}       <- expect(parser.tokens, :identifier),
+         {:ok, rest, parameters} <- parse_arg_list(rest),
+         {:ok, rest, body}       <- parse_atom(%{parser | tokens: rest}),
+         {:ok, rest, _}          <- expect(rest, ")"),
+      do: {:ok, rest, %AST.Function{name: name.value, parameters: parameters,
+                                    body: body}}
   end
 end
