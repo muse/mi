@@ -14,6 +14,8 @@ atom ::= identifier
        | boolean
        | null ;
 
+null ::= "nil" ;
+boolean ::= "true" | "false" ;
 keyword ::= "lambda" | "define" | "use" | "loop" | "cond" | "if" | "case"
           | "try" | "catch" | "throw" | "not" | "and" | "or" | "eq" | "delete"
           | "typeof" | "void" | "new" | "instanceof" | "in" ;
@@ -23,8 +25,6 @@ digit  ::= "0" | ... | "9" ;
 number ::= [ "-" ], { digit } | ( { digit }, ".", { digit } ) ;
 
 string ::= '"', { ? all characters ? - '"' | '\"' }, '"' ;
-boolean ::= "true" | "false" ;
-null ::= "nil" ;
 
 letter ::= ( "a" | ... | "z" ) | ( "A" | ... | "Z" ) | "$" ;
 identifier ::= ( letter, { letter | digit | "/" | "-" } ) - reserved-keyword ;
