@@ -202,6 +202,7 @@ defmodule Mi.Parser do
   defp parse_lambda(%Parser{tokens: [%Token{type: :*} | rest]} = parser) do
     parse_lambda(%{parser | tokens: rest}, false)
   end
+  @spec parse_lambda(Parser.t, boolean) :: node_result
   defp parse_lambda(%Parser{tokens: [token | rest]} = parser, lexical_this? \\ true) do
     # Check for optional name for lambda
     {name, rest} =
@@ -221,6 +222,7 @@ defmodule Mi.Parser do
   defp parse_define(%Parser{tokens: [%Token{type: :*} | rest]} = parser) do
     parse_define(%{parser | tokens: rest}, true)
   end
+  @spec parse_define(Parser.t, boolean) :: node_result
   defp parse_define(%Parser{} = parser, default? \\ false) do
     with {:ok, rest, name}  <- expect(parser.tokens, :identifier),
          {:ok, rest, value} <- parse_atom(%{parser | tokens: rest}),
