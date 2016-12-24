@@ -200,17 +200,21 @@ defmodule Mi.Parser do
 
   @spec parse_lambda(Parser.t) :: node_result
   defp parse_lambda(%Parser{tokens: [%Token{type: :*} | rest]} = parser) do
-    with {:ok, rest, name} <- expect(rest, :identifier),
-         {:ok, rest, args} <- parse_arg_list(rest),
-         {:ok, rest, body} <- parse_atom(%{parser | tokens: rest}),
-         {:ok, rest, _}    <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Lambda{name: name.value, args: args, body: body}}
+    parse_lambda(%{parser | tokens: rest}, false)
   end
-  defp parse_lambda(%Parser{} = parser) do
-    with {:ok, rest, args} <- parse_arg_list(parser.tokens),
+  defp parse_lambda(%Parser{tokens: [token | rest]} = parser, lexical_this? \\ true) do
+    # Check for optional name for lambda
+    {name, rest} =
+      case token.type do
+        :identifier -> {token.value, rest}
+        _           -> {nil, parser.tokens}
+      end
+
+    with {:ok, rest, args} <- parse_arg_list(rest),
          {:ok, rest, body} <- parse_atom(%{parser | tokens: rest}),
          {:ok, rest, _}    <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Lambda{args: args, body: body}}
+      do: {:ok, rest, %AST.Lambda{name: name, args: args, body: body,
+                                  lexical_this?: lexical_this?}}
   end
 
   @spec parse_define(Parser.t) :: node_result
@@ -221,7 +225,7 @@ defmodule Mi.Parser do
     with {:ok, rest, name}  <- expect(parser.tokens, :identifier),
          {:ok, rest, value} <- parse_atom(%{parser | tokens: rest}),
          {:ok, rest, _}     <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Variable{name: name.value, value: value, is_default: default?}}
+      do: {:ok, rest, %AST.Variable{name: name.value, value: value, default?: default?}}
   end
 
   @spec parse_use(Parser.t) :: node_result

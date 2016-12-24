@@ -52,18 +52,24 @@ defmodule MiParserTest do
     test "Lambda statements are parsed" do
       {:ok, ast} = Parser.parse("""
       (lambda (a b) (* a b))
-      (lambda* named () 5)
+      (lambda* () this)
+      (lambda named () 5)
       """)
 
       assert [
         %AST.Lambda{name: nil,
+                    lexical_this?: true,
                     args: [%AST.Identifier{name: "a"},
                            %AST.Identifier{name: "b"}],
-                    body: %AST.Expression{operator: :*, arguments: [
+                    body: %AST.Expression{operator: :*,
+                                          arguments: [
                                              %AST.Identifier{name: "a"},
                                              %AST.Identifier{name: "b"},
-                                           ]}},
-        %AST.Lambda{name: "named", args: [], body: %AST.Number{value: "5"}}
+                                          ]}},
+        %AST.Lambda{name: nil, lexical_this?: false, args: [],
+                    body: %AST.Identifier{name: "this"}},
+        %AST.Lambda{name: "named", lexical_this?: true, args: [],
+                    body: %AST.Number{value: "5"}}
       ] === ast
     end
 
@@ -71,8 +77,8 @@ defmodule MiParserTest do
       {:ok, ast} = Parser.parse("(define a 5) (define* b 6)")
 
       assert [
-        %AST.Variable{name: "a", value: %AST.Number{value: "5"}, is_default: false},
-        %AST.Variable{name: "b", value: %AST.Number{value: "6"}, is_default: true},
+        %AST.Variable{name: "a", value: %AST.Number{value: "5"}, default?: false},
+        %AST.Variable{name: "b", value: %AST.Number{value: "6"}, default?: true},
       ] === ast
     end
 

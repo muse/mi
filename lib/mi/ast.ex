@@ -73,23 +73,25 @@ defmodule Mi.AST do
   end
 
   defmodule Lambda do
-    @enforce_keys [:args, :body]
-    defstruct [:name, :args, :body]
+    @enforce_keys [:args, :body, :lexical_this?]
+    defstruct [:name, :args, :body, :lexical_this?]
 
     @type t :: %__MODULE__{
       name: String.t,
       args: [String.t],
-      body: [AST.tnode]
+      body: [AST.tnode],
+      lexical_this?: boolean
     }
   end
 
   defmodule Variable do
-    @enforce_keys [:name, :is_default]
-    defstruct [:name, :value, :is_default]
+    @enforce_keys [:name, :default?]
+    defstruct [:name, :value, :default?]
 
     @type t :: %__MODULE__{
       name: String.t,
-      value: String.t
+      value: String.t,
+      default?: boolean
     }
   end
 

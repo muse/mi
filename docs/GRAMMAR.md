@@ -43,7 +43,7 @@ statement ::= lambda
 
 arg-list ::= "(", [ { identifier } ], ")" ;
 
-lambda ::= "lambda", [ "*", identifier ], arg-list, sexpr ;
+lambda ::= "lambda", [ "*" ], [ identifier ], arg-list, sexpr ;
 define ::= "define", [ "*" ], identifier, sexpr ;
 use    ::= "use", ( [ "*" ], string, "'", identifier ) | string ;
 if     ::= "if", sexpr, sexpr, [ sexpr ] ;
