@@ -1,0 +1,30 @@
+; 'use strict';
+;
+; const buildTower = n => {
+;     if (n < 0) return
+;
+;     let tower = [];
+;     let maxWidth = n*2 - 1;
+;
+;     for (let i = 1; i <= n; i++) {
+;         let length = i*2 - 1;
+;         let paddingLength = maxWidth - length;
+;         let padding = ' '.repeat(paddingLength/2);
+;         tower.push(padding + '*'.repeat(length) + padding);
+;     }
+;
+;     return tower;
+; }
+
+(defun build-tower (n)
+  (if (< n 0) (return))
+  (define tower '()
+          max-width (- (* n 2) 1))
+
+  (loop ((define i 0) (<= i n) (++ i))
+    (define length (- (* i 2) 1)
+            padding-length (- max-width length)
+            padding (. " " (repeat (/ padding-length 2))))
+    (. tower (push (+ padding (. "*" (repeat length)) padding))))
+
+  tower)
