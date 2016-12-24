@@ -107,8 +107,7 @@ defmodule MiParserTest do
 
       assert [
         %AST.If{condition: %AST.Expression{operator: :not,
-                                           arguments: [%AST.Bool{value:
-                                                                 "true"}]},
+                                           arguments: [%AST.Bool{value: "true"}]},
                 true_body: %AST.Identifier{name: "something-wrong"}},
         %AST.If{
           condition: %AST.Expression{operator: :eq,
@@ -118,6 +117,19 @@ defmodule MiParserTest do
                                      ]},
           true_body: %AST.String{value: "what?"},
           false_body: %AST.String{value: "thought so"}}
+      ] === ast
+    end
+
+    test "Ternary statements are parsed" do
+      {:ok, ast} = Parser.parse("(? (eq 2 2) 'ok 'world-on-fire)")
+
+      assert [
+        %AST.Ternary{
+          condition: %AST.Expression{operator: :eq,
+                                     arguments: [%AST.Number{value: "2"},
+                                                 %AST.Number{value: "2"}]},
+          true_body: %AST.Symbol{name: "ok"},
+          false_body: %AST.Symbol{name: "world-on-fire"}}
       ] === ast
     end
 

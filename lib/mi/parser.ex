@@ -141,12 +141,13 @@ defmodule Mi.Parser do
   @spec parse_statement(Parser.t) :: node_result
   defp parse_statement(%Parser{tokens: [token | rest]} = parser) do
     case token.type do
-      :lambda -> parse_lambda(%{parser | tokens: rest})
-      :define -> parse_define(%{parser | tokens: rest})
-      :use    -> parse_use(%{parser | tokens: rest})
-      :if     -> parse_if(%{parser | tokens: rest})
-      :defun  -> parse_defun(%{parser | tokens: rest})
-      _       -> error(token, "unexpected token `#{token}'")
+      :lambda  -> parse_lambda(%{parser | tokens: rest})
+      :define  -> parse_define(%{parser | tokens: rest})
+      :use     -> parse_use(%{parser | tokens: rest})
+      :if      -> parse_if(%{parser | tokens: rest})
+      :ternary -> parse_ternary(%{parser | tokens: rest})
+      :defun   -> parse_defun(%{parser | tokens: rest})
+      _        -> error(token, "unexpected token `#{token}'")
     end
   end
 
@@ -287,9 +288,10 @@ defmodule Mi.Parser do
 
   @spec parse_ternary(Parser.t) :: node_result
   defp parse_ternary(%Parser{} = parser) do
-    with {:ok, rest, condition} <- parse_atom(parser),
-         {:ok, rest, true_body} <- parse_atom(%{parser | tokens: rest}),
+    with {:ok, rest, condition}  <- parse_atom(parser),
+         {:ok, rest, true_body}  <- parse_atom(%{parser | tokens: rest}),
          {:ok, rest, false_body} <- parse_atom(%{parser | tokens: rest}),
+         {:ok, rest, _}          <- expect(rest, ")"),
       do: {:ok, rest, %AST.Ternary{condition: condition, true_body: true_body,
                                    false_body: false_body}}
   end

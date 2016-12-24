@@ -13,6 +13,7 @@ defmodule Mi.AST do
                | Variable.t
                | Use.t
                | If.t
+               | Ternary.t
                | Function.t
 
   defmodule List do
@@ -106,6 +107,17 @@ defmodule Mi.AST do
 
   defmodule If do
     @enforce_keys [:condition, :true_body]
+    defstruct [:condition, :true_body, :false_body]
+
+    @type t :: %__MODULE__{
+      condition: AST.tnode,
+      true_body: [AST.tnode],
+      false_body: [AST.tnode]
+    }
+  end
+
+  defmodule Ternary do
+    @enforce_keys [:condition, :true_body, :false_body]
     defstruct [:condition, :true_body, :false_body]
 
     @type t :: %__MODULE__{
