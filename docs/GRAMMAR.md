@@ -1,5 +1,5 @@
 # Grammar specification
-This document containts Mi's grammar as it is used to parse source files.
+This document contains Mi's grammar as it is used to parse source files.
 
 ```
 program ::= [ { list } ] ;
