@@ -16,14 +16,14 @@ defmodule Mi do
         {:error, reason} -> fatal_error("lexer", reason)
       end
 
-    parser =
+    ast =
       case Parser.parse(input) do
-        {:ok, parser}    -> parser
-        {:error, reason} -> fatal_error("parser", reason)
+        {:ok, ast}       -> ast
+        {:error, reason} -> fatal_error("ast", reason)
       end
 
     IO.inspect tokens
     IO.inspect '# ======= #'
-    IO.inspect parse
+    IO.inspect ast
   end
 end
