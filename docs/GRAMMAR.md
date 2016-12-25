@@ -4,7 +4,7 @@ This document contains Mi's grammar as it is used to parse source files.
 ```
 program ::= [ { list } ] ;
 
-list  ::= "(", { sexpr } | statement | expresion | , ")" ;
+list  ::= "(", { sexpr } | statement | expression | , ")" ;
 sexpr ::= [ "'" ], atom | list ;
 comment ::= ";", { ? all characters ? - ? newline ? }, ? newline ? ;
 

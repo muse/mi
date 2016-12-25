@@ -75,61 +75,54 @@ defmodule Mi.Parser do
   defp do_parse(%Parser{tokens: []} = parser) do
     {:ok, Enum.reverse(parser.ast)}
   end
-  defp do_parse(%Parser{tokens: [%Token{type: :oparen} | rest]} = parser) do
-    case parse_list(rest) do
+  defp do_parse(%Parser{tokens: [%Token{type: :cparen} = token | _]}) do
+    error(token, "mismatched `)'")
+  end
+  defp do_parse(%Parser{tokens: tokens} = parser) do
+    case parse_sexpr(tokens) do
       {:error, reason} -> {:error, reason}
       {:ok, rest, node} ->
         do_parse(%{parser | tokens: rest, ast: [node | parser.ast]})
     end
   end
-  defp do_parse(%Parser{tokens: [%Token{type: :cparen} = token | _]}) do
-    error(token, "mismatched `)'")
-  end
-  defp do_parse(%Parser{tokens: [token | _]}) do
-    error(token, "unexpected token `#{token}', expecting `('")
-  end
 
+  @spec parse_sexpr([Token.t]) :: tree_result | node_result
+  defp parse_sexpr([%Token{type: :quote}, token | rest] = tokens) do
+    # Quoted S expressions sometimes have a special case, otherwise it's just
+    # ignored
+    case token.type do
+      :oparen     -> parse_literal_list(tokens)
+      :identifier -> {:ok, rest, %AST.Symbol{name: token.value}}
+      :number     -> {:ok, rest, %AST.Symbol{name: token.value}}
+      _           -> parse_sexpr([token | rest]) # TODO: warn about unnecessary quote
+    end
+  end
+  defp parse_sexpr([%Token{type: :oparen} | rest]), do: parse_list(rest)
+  defp parse_sexpr(tokens), do: parse_atom(tokens)
+
+  # A list can be an expression, statement or list.
   @spec parse_list([Token.t]) :: tree_result
-  defp parse_list([%Token{type: type} = token | rest])
-  when is_operator(type),
+  defp parse_list([%Token{type: type} = token | rest]) when is_operator(type),
     do: parse_expression(rest, token)
-  defp parse_list([%Token{type: type} | _] = tokens)
-  when is_statement(type),
+  defp parse_list([%Token{type: type} | _] = tokens) when is_statement(type),
     do: parse_statement(tokens)
-  defp parse_list(tokens),
-    do: parse_list(tokens, [])
 
-  @spec parse_list([Token.t], [AST.tnode], boolean) :: tree_result
-  defp parse_list(tokens, list, literal \\ false)
-  defp parse_list([%Token{type: :cparen} | rest], list, true) do
-    {:ok, rest, %AST.List{items: Enum.reverse(list)}}
-  end
-  defp parse_list([%Token{type: :cparen} | rest], list, false) do
+  @spec parse_list([Token.t], [AST.tnode]) :: tree_result
+  defp parse_list(tokens, list \\ [])
+  defp parse_list([%Token{type: :cparen} | rest], list) do
     {:ok, rest, list |> Enum.reverse |> List.flatten}
   end
-  defp parse_list(tokens, list, literal?) do
-    case parse_atom(tokens) do
+  defp parse_list(tokens, list) do
+    case parse_sexpr(tokens) do
       {:error, message} -> {:error, message}
       {:ok, rest, node} ->
-        parse_list(rest, [node | list], literal?)
+        parse_list(rest, [node | list])
     end
   end
 
   @spec parse_atom([Token.t]) :: tree_result | node_result
-  defp parse_atom([%Token{type: :quote}, token | rest]) do
-    # Quoted atom sometimes have a special case, otherwise it's just ignored
-    case token.type do
-      :oparen     -> parse_list(rest, [], true)
-      :identifier -> {:ok, rest, %AST.Symbol{name: token.value}}
-      :number     -> {:ok, rest, %AST.Symbol{name: token.value}}
-      _           ->
-        # TODO: warn about unnecessary quote
-        parse_atom([token | rest])
-    end
-  end
   defp parse_atom([token | rest]) do
     case token.type do
-      :oparen     -> parse_list(rest)
       :identifier -> {:ok, rest, %AST.Identifier{name: token.value}}
       :number     -> {:ok, rest, %AST.Number{value: token.value}}
       :string     -> {:ok, rest, %AST.String{value: token.value}}
@@ -140,9 +133,17 @@ defmodule Mi.Parser do
     end
   end
 
+  @spec parse_literal_list([Token.t]) :: node_result
+  defp parse_literal_list(tokens) do
+    with {:ok, rest, _}    <- expect(tokens, "'"),
+         {:ok, rest, _}    <- expect(rest, "("),
+         {:ok, rest, list} <- parse_list(rest, []),
+      do: {:ok, rest, %AST.List{items: list}}
+  end
+
   @spec parse_statement([Token.t]) :: node_result
-  defp parse_statement([%Token{type: type} = token | rest]) do
-    case type do
+  defp parse_statement([token | rest]) do
+    case token.type do
       :lambda  -> parse_lambda(rest)
       :define  -> parse_define(rest)
       :use     -> parse_use(rest)
@@ -174,7 +175,7 @@ defmodule Mi.Parser do
     end
   end
   defp parse_expression(tokens, operator, arguments) do
-    case parse_atom(tokens) do
+    case parse_sexpr(tokens) do
       {:error, message} -> {:error, message}
       {:ok, rest, node} -> parse_expression(rest, operator, [node | arguments])
     end
@@ -218,7 +219,7 @@ defmodule Mi.Parser do
     {:ok, tokens, Enum.reverse(nodes)} # Let parent functions handle `)`
   end
   defp parse_body(tokens, nodes) do
-    case parse_atom(tokens) do
+    case parse_sexpr(tokens) do
       {:error, message} -> {:error, message}
       {:ok, rest, node} -> parse_body(rest, [node | nodes])
     end
@@ -251,7 +252,7 @@ defmodule Mi.Parser do
   @spec parse_define([Token.t], boolean) :: node_result
   defp parse_define(tokens, default? \\ false) do
     with {:ok, rest, name}  <- expect(tokens, :identifier),
-         {:ok, rest, value} <- parse_atom(rest),
+         {:ok, rest, value} <- parse_sexpr(rest),
          {:ok, rest, _}     <- expect(rest, ")"),
       do: {:ok, rest, %AST.Variable{name: name.value, value: value,
                                     default?: default?}}
@@ -262,7 +263,7 @@ defmodule Mi.Parser do
     # TODO: improve error messages here. currently throws errors about
     #       unexpected )
     with {:ok, rest, module} <- expect(rest, :string),
-         {:ok, rest, %AST.Symbol{name: name}} <- parse_atom(rest),
+         {:ok, rest, %AST.Symbol{name: name}} <- parse_sexpr(rest),
          {:ok, rest, _} <- expect(rest, ")"),
       do: {:ok, rest, %AST.Use{module: module.value, name: name}}
   end
@@ -274,13 +275,13 @@ defmodule Mi.Parser do
 
   @spec parse_if([Token.t]) :: node_result
   defp parse_if(tokens) do
-    with {:ok, rest, condition} <- parse_atom(tokens),
-         {:ok, rest, true_body} <- parse_atom(rest) do
+    with {:ok, rest, condition} <- parse_sexpr(tokens),
+         {:ok, rest, true_body} <- parse_sexpr(rest) do
       case rest do
         [%Token{type: :cparen} | rest] ->
           {:ok, rest, %AST.If{condition: condition, true_body: true_body}}
         _ ->
-          with {:ok, rest, false_body} <- parse_atom(rest),
+          with {:ok, rest, false_body} <- parse_sexpr(rest),
                {:ok, rest, _}          <- expect(rest, ")"),
             do: {:ok, rest, %AST.If{condition: condition, true_body: true_body,
                                     false_body: false_body}}
@@ -290,9 +291,9 @@ defmodule Mi.Parser do
 
   @spec parse_ternary([Token.t]) :: node_result
   defp parse_ternary(tokens) do
-    with {:ok, rest, condition}  <- parse_atom(tokens),
-         {:ok, rest, true_body}  <- parse_atom(rest),
-         {:ok, rest, false_body} <- parse_atom(rest),
+    with {:ok, rest, condition}  <- parse_sexpr(tokens),
+         {:ok, rest, true_body}  <- parse_sexpr(rest),
+         {:ok, rest, false_body} <- parse_sexpr(rest),
          {:ok, rest, _}          <- expect(rest, ")"),
       do: {:ok, rest, %AST.Ternary{condition: condition, true_body: true_body,
                                    false_body: false_body}}
@@ -309,9 +310,9 @@ defmodule Mi.Parser do
   end
 
   defp parse_object([token | _] = tokens) do
-    with {:ok, rest, value} when is_list(value) <- parse_list(tokens) do
-      if Integer.is_even(length(value)) do
-        {:ok, rest, %AST.Object{value: value}}
+    with {:ok, rest, list} <- parse_list(tokens, []) do
+      if Integer.is_even(length(list)) do
+        {:ok, rest, %AST.Object{value: list}}
       else
         error(token, "invalid amount of arguments for object (must be even)")
       end
