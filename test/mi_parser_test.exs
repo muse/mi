@@ -73,10 +73,19 @@ defmodule MiParserTest do
     end
 
     test "Define statements are parsed" do
-      {:ok, ast} = Parser.parse("(define a 5) (define* b 6)")
+      {:ok, ast} = Parser.parse("""
+      (define a 5)
+      (define a 5 b 6 c 7)
+      (define* b 6)
+      """)
 
       assert [
         %AST.Variable{name: "a", value: %AST.Number{value: "5"}, default?: false},
+        [
+          %AST.Variable{name: "a", value: %AST.Number{value: "5"}, default?: false},
+          %AST.Variable{name: "b", value: %AST.Number{value: "6"}, default?: false},
+          %AST.Variable{name: "c", value: %AST.Number{value: "7"}, default?: false},
+        ],
         %AST.Variable{name: "b", value: %AST.Number{value: "6"}, default?: true},
       ] === ast
     end

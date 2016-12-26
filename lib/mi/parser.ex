@@ -246,17 +246,23 @@ defmodule Mi.Parser do
                                   lexical_this?: lexical_this?}}
   end
 
-  @spec parse_define([Token.t]) :: node_result
-  defp parse_define([%Token{type: :*} | rest]) do
+  @spec parse_define([Token.t], boolean, []) :: node_result | tree_result
+  defp parse_define(tokens, default? \\ false, nodes \\ [])
+  defp parse_define([%Token{type: :*} | rest], _, _) do
     parse_define(rest, true)
   end
-  @spec parse_define([Token.t], boolean) :: node_result
-  defp parse_define(tokens, default? \\ false) do
+  defp parse_define([%Token{type: :cparen} | rest], _, [node]) do
+    {:ok, rest, node} # Single define, don't return a list
+  end
+  defp parse_define([%Token{type: :cparen} | rest], _, nodes) do
+    {:ok, rest, nodes |> Enum.reverse |> List.flatten }
+  end
+  defp parse_define(tokens, default?, nodes) do
     with {:ok, rest, name}  <- expect(tokens, :identifier),
-         {:ok, rest, value} <- parse_sexpr(rest),
-         {:ok, rest, _}     <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Variable{name: name.value, value: value,
-                                    default?: default?}}
+         {:ok, rest, value} <- parse_sexpr(rest) do
+      node = %AST.Variable{name: name.value, value: value, default?: default?}
+      parse_define(rest, default?, [node | nodes])
+    end
   end
 
   @spec parse_use([Token.t]) :: node_result
