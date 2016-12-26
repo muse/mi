@@ -129,7 +129,7 @@ defmodule Mi.Parser do
       :true       -> {:ok, rest, %AST.Bool{value: "true"}}
       :false      -> {:ok, rest, %AST.Bool{value: "false"}}
       :nil        -> {:ok, rest, %AST.Nil{}}
-      _           -> error(token, "unexpected token `#{token}'")
+      _           -> error(token, "expected atom, got `#{token}'")
     end
   end
 
