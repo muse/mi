@@ -39,7 +39,8 @@ statement ::= lambda
             | define
             | use
             | if
-            | defun ;
+            | defun
+            | object ;
 
 arg-list ::= "(", [ { identifier } ], ")" ;
 
@@ -48,4 +49,5 @@ define ::= "define", [ "*" ], identifier, sexpr ;
 use    ::= "use", ( [ "*" ], string, "'", identifier ) | string ;
 if     ::= "if", sexpr, sexpr, [ sexpr ] ;
 defun  ::= "defun", identifier, arg-list, sexpr ;
+object ::= "object", { sexpr } ;
 ```
