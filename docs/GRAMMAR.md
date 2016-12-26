@@ -40,7 +40,8 @@ statement ::= lambda
             | use
             | if
             | defun
-            | object ;
+            | object
+            | return ;
 
 arg-list ::= "(", [ { identifier } ], ")" ;
 
@@ -50,4 +51,5 @@ use    ::= "use", ( [ "*" ], string, "'", identifier ) | string ;
 if     ::= "if", sexpr, sexpr, [ sexpr ] ;
 defun  ::= "defun", identifier, arg-list, sexpr ;
 object ::= "object", { sexpr } ;
+return ::= "return", sexpr ;
 ```

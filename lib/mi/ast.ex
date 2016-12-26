@@ -16,6 +16,7 @@ defmodule Mi.AST do
                | Ternary.t
                | Function.t
                | Object.t
+               | Return.t
 
   defmodule List do
     defstruct [:items]
@@ -144,5 +145,11 @@ defmodule Mi.AST do
     defstruct [:value]
 
     @type t :: %__MODULE__{ value: map }
+  end
+
+  defmodule Return do
+    defstruct [:value]
+
+    @type t :: %__MODULE__{ value: AST.tnode }
   end
 end

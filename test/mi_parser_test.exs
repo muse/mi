@@ -61,10 +61,10 @@ defmodule MiParserTest do
                     lexical_this?: true,
                     parameters: ["a", "b"],
                     body: [%AST.Expression{operator: :*,
-                                          arguments: [
+                                           arguments: [
                                              %AST.Identifier{name: "a"},
                                              %AST.Identifier{name: "b"},
-                                          ]}]},
+                                           ]}]},
         %AST.Lambda{name: nil, lexical_this?: false, parameters: [],
                     body: [%AST.Identifier{name: "this"}]},
         %AST.Lambda{name: "named", lexical_this?: true, parameters: [],
@@ -194,6 +194,33 @@ defmodule MiParserTest do
                   %AST.Symbol{name: "m"}, %AST.Number{value: "10"}]
         },
         %AST.Object{value: []}
+      ] === ast
+    end
+
+    test "Return statements are parsed" do
+      {:ok, ast} = Parser.parse("""
+      (return)
+      (return a)
+      (return (lambda (x) (+ x 1)))
+      """)
+
+      assert [
+        %AST.Return{value: nil},
+        %AST.Return{value: %AST.Identifier{name: "a"}},
+        %AST.Return{
+          value: %AST.Lambda{
+            parameters: ["x"],
+            lexical_this?: true,
+            body: [
+              %AST.Expression{
+                operator: :+,
+                arguments: [
+                  %AST.Identifier{name: "x"},
+                  %AST.Number{value: "1"}
+                ]}
+            ]
+          }
+        }
       ] === ast
     end
   end

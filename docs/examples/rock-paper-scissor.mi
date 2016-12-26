@@ -7,8 +7,8 @@
 ; else if (binds[cpu] === binds[you])   { console.log('Draw!'); }
 ; else                                  { console.log('Won!');  }
 
-(define binds (object '('rock 2 'paper 1 'scissor 0))
-        moves (object '('2 1 '1 0 '0 2))
+(define binds (object 'rock 2 'paper 1 'scissor 0)
+        moves (object '2 1 '1 0 '0 2)
         cpu   (. (Objects/keys binds)
                  (~ (~ (* (Math/random)
                           (. (Object/keys binds) length)))))

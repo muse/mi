@@ -27,7 +27,7 @@ defmodule Mi.Parser do
 
   @operators @unary_operators ++ @multi_arity_operators
 
-  @statements [:lambda, :define, :use, :if, :ternary, :defun, :object]
+  @statements [:lambda, :define, :use, :if, :ternary, :defun, :object, :return]
 
   defmacrop is_unary(operator) do
     quote do: unquote(operator) in @unary_operators
@@ -151,6 +151,7 @@ defmodule Mi.Parser do
       :if      -> parse_if(rest)
       :ternary -> parse_ternary(rest)
       :defun   -> parse_defun(rest)
+      :return  -> parse_return(rest)
       _        -> error(token, "unexpected token `#{token}'")
     end
   end
@@ -309,6 +310,7 @@ defmodule Mi.Parser do
                                     body: body}}
   end
 
+  @spec parse_object([Token.t]) :: node_result
   defp parse_object([token | _] = tokens) do
     with {:ok, rest, list} <- parse_list(tokens, []) do
       if Integer.is_even(length(list)) do
@@ -317,5 +319,15 @@ defmodule Mi.Parser do
         error(token, "invalid amount of arguments for object (must be even)")
       end
     end
+  end
+
+  @spec parse_return([Token.t]) :: node_result
+  defp parse_return([%Token{type: :cparen} | rest]) do
+    {:ok, rest, %AST.Return{value: nil}}
+  end
+  defp parse_return(tokens) do
+    with {:ok, rest, value} <- parse_sexpr(tokens),
+         {:ok, rest, _}     <- expect(rest, ")"),
+      do: {:ok, rest, %AST.Return{value: value}}
   end
 end
