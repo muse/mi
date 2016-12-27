@@ -1,0 +1,23 @@
+; var binds = {'rock': 2, 'paper': 1, 'scissor': 0};
+; var moves = {2: 1, 1: 0, 0: 2};
+; var cpu   = Object.keys(binds)[~~(Math.random() * Object.keys(binds).length)];
+; var you   = 'paper';
+;
+; if (moves[binds[you]] === binds[cpu]) { console.log('Lost!'); }
+; else if (binds[cpu] === binds[you])   { console.log('Draw!'); }
+; else                                  { console.log('Won!');  }
+
+(define binds (object 'rock 2 'paper 1 'scissor 0)
+        moves (object '2 1 '1 0 '0 2)
+        cpu   (. (Objects/keys binds)
+                 (~ (~ (* (Math/random)
+                          (. (Object/keys binds) length)))))
+        you   'paper)
+
+(cond
+  (eq (. moves (. binds you)) (. binds cpu))
+    (console/log "Lost!")
+  (eq (. binds cpu) (. binds you))
+    (console/log "Draw!")
+  'otherwise
+    (console/log "Won!"))

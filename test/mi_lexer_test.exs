@@ -8,18 +8,18 @@ defmodule MiLexerTest do
       {:ok, tokens} = Lexer.lex("""
       lambda define use loop cond case try catch throw true false nil
       """)
-      assert [%Token{type: :lambda, value: 'lambda'},
-              %Token{type: :define, value: 'define'},
-              %Token{type: :use, value: 'use'},
-              %Token{type: :loop, value: 'loop'},
-              %Token{type: :cond, value: 'cond'},
-              %Token{type: :case, value: 'case'},
-              %Token{type: :try, value: 'try'},
-              %Token{type: :catch, value: 'catch'},
-              %Token{type: :throw, value: 'throw'},
-              %Token{type: :true, value: 'true'},
-              %Token{type: :false, value: 'false'},
-              %Token{type: :nil, value: 'nil'}] = tokens
+      assert [%Token{type: :lambda, value: "lambda"},
+              %Token{type: :define, value: "define"},
+              %Token{type: :use, value: "use"},
+              %Token{type: :loop, value: "loop"},
+              %Token{type: :cond, value: "cond"},
+              %Token{type: :case, value: "case"},
+              %Token{type: :try, value: "try"},
+              %Token{type: :catch, value: "catch"},
+              %Token{type: :throw, value: "throw"},
+              %Token{type: :true, value: "true"},
+              %Token{type: :false, value: "false"},
+              %Token{type: :nil, value: "nil"}] = tokens
     end
 
     test "Keywords aren't recognized when part of a longer identifier" do
@@ -33,8 +33,23 @@ defmodule MiLexerTest do
     test "String literals are recognized and read properly" do
       {:ok, tokens} = Lexer.lex(~s("I'm Å \\"string\\"" "I'm a seperate string!"))
 
-      assert [%Token{type: :string, value: ~c(I'm Å \\"string\\")},
-              %Token{type: :string, value: ~c(I'm a seperate string!)}] = tokens
+      assert [%Token{type: :string, value: ~s(I'm Å \\"string\\")},
+              %Token{type: :string, value: ~s(I'm a seperate string!)}] = tokens
+    end
+
+    # TODO: parse negative numbers (make unary minus operator or lex it as a
+    #       whole?), scientific numbers (2e9) and other bases (# or 0x?)
+    test "Number literals are recognized and read properly" do
+      {:ok, tokens} = Lexer.lex("0.45 2.3 5.3 1000000 86 0 1 00000")
+
+      assert [%Token{type: :number, value: "0.45"},
+              %Token{type: :number, value: "2.3"},
+              %Token{type: :number, value: "5.3"},
+              %Token{type: :number, value: "1000000"},
+              %Token{type: :number, value: "86"},
+              %Token{type: :number, value: "0"},
+              %Token{type: :number, value: "1"},
+              %Token{type: :number, value: "00000"}] = tokens
     end
 
     test "Unterminated strings error" do
@@ -46,53 +61,55 @@ defmodule MiLexerTest do
 
     test "Identifier literals are recognized and read properly" do
       {:ok, tokens} = Lexer.lex("""
-      console/log document/write an-identifier20 @global b2-2 simpleident x y z
+      console/log document/write an-identifier20 b2-2 simpleident x y z
       """)
 
       Enum.map(tokens, fn(token) -> assert token.type === :identifier end)
     end
 
-    test "Symbol literals are recognized and read properly" do
-      {:ok, tokens} = Lexer.lex("""
-      :ok :__ :_- :++ :- :* :/ :% :^ :@ :! :& :| :c|C :aA!
-      """)
-
-      Enum.map(tokens, fn(token) -> assert token.type === :symbol end)
-    end
-
     test "Operators are recoginized properly" do
-      # %Token{type: :or, value: 'or'},
-      # %Token{type: :and, value: 'and'},
-      # %Token{type: :not, value: 'not'},
       {:ok, tokens} = Lexer.lex("""
-      +  ++  -  --  /  //  *  %  **  <  > <=  >=  <<  >>  >>>  ~  ^ & not
-      and  or  eq  delete  typeof  void  new instanceof  in  from
+      +  ++  -  --  /  //  *  %  **  <  > <=  >=  <<  >>  >>>  ~  ^ & ?: not .
+      and  or  eq  delete  typeof  void  new instanceof  in
       """)
-      Enum.map(tokens, fn(token) -> assert token.type === :operator end)
 
-      assert [
-        %Token{value: 43}, %Token{value: '++'},
-        %Token{value: 45}, %Token{value: '--'},
-        %Token{value: 47}, %Token{value: '//'},
-        %Token{value: 42}, %Token{value: 37},
-        %Token{value: '**'}, %Token{value: 60},
-        %Token{value: 62}, %Token{value: '<='},
-        %Token{value: '>='}, %Token{value: '<<'},
-        %Token{value: '>>'}, %Token{value: '>>>'},
-        %Token{value: 126}, %Token{value: 94},
-        %Token{value: 38}, %Token{value: 'not'},
-        %Token{value: 'and'}, %Token{value: 'or'},
-        %Token{value: 'eq'}, %Token{value: 'delete'},
-        %Token{value: 'typeof'}, %Token{value: 'void'},
-        %Token{value: 'new'}, %Token{value: 'instanceof'},
-        %Token{value: 'in'}, %Token{value: 'from'}
-      ]
+      assert [%Token{type: :+, value: "+"},
+              %Token{type: :++, value: "++"},
+              %Token{type: :-, value: "-"},
+              %Token{type: :--, value: "--"},
+              %Token{type: :/, value: "/"},
+              %Token{type: :"//", value: "//"},
+              %Token{type: :*, value: "*"},
+              %Token{type: :%, value: "%"},
+              %Token{type: :"**", value: "**"},
+              %Token{type: :<, value: "<"},
+              %Token{type: :>, value: ">"},
+              %Token{type: :<=, value: "<="},
+              %Token{type: :>=, value: ">="},
+              %Token{type: :"<<", value: "<<"},
+              %Token{type: :">>", value: ">>"},
+              %Token{type: :>>>, value: ">>>"},
+              %Token{type: :"~", value: "~"},
+              %Token{type: :^, value: "^"},
+              %Token{type: :&, value: "&"},
+              %Token{type: :ternary, value: "?:"},
+              %Token{type: :not, value: "not"},
+              %Token{type: :., value: "."},
+              %Token{type: :and, value: "and"},
+              %Token{type: :or, value: "or"},
+              %Token{type: :eq, value: "eq"},
+              %Token{type: :delete, value: "delete"},
+              %Token{type: :typeof, value: "typeof"},
+              %Token{type: :void, value: "void"},
+              %Token{type: :new, value: "new"},
+              %Token{type: :instanceof, value: "instanceof"},
+              %Token{type: :in, value: "in"}] = tokens
     end
 
     test "Comments are skipped" do
       {:ok, tokens_a} = Lexer.lex("""
       (define x 10) ; Insightful comment
-      (* @x/n @x/m)
+      (* x/n x/m)
       """)
       assert [%Token{type: :oparen},
               %Token{type: :define},
@@ -100,7 +117,7 @@ defmodule MiLexerTest do
               %Token{type: :number},
               %Token{type: :cparen},
               %Token{type: :oparen},
-              %Token{type: :operator},
+              %Token{type: :*},
               %Token{type: :identifier},
               %Token{type: :identifier},
               %Token{type: :cparen}] = tokens_a

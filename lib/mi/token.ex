@@ -5,10 +5,11 @@ defmodule Mi.Token do
 
   alias Mi.Token
 
+  @enforce_keys [:value, :type, :line, :pos]
   defstruct [:value, :type, :line, :pos]
 
   @type t :: %__MODULE__{
-    value: charlist,
+    value: String.t,
     type: type,
     line: pos_integer,
     pos: pos_integer
@@ -17,16 +18,11 @@ defmodule Mi.Token do
   @type type :: atom
 
   defimpl String.Chars, for: Token do
-    def to_string(token), do: "#{token.value}"
+    def to_string(token), do: "#{[token.value]}"
   end
 
   defmacro is_whitespace(c) do
     quote do: unquote(c) in [?\t, ?\s, ?\r]
-  end
-
-  defmacro is_symbol_literal(c) do
-    quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or
-      unquote(c) in [?_, ?-, ?+, ?-, ?*, ?/, ?%, ?^, ?@, ?!, ?&, ?|]
   end
 
   defmacro is_numeric_literal(c) do
@@ -35,23 +31,23 @@ defmodule Mi.Token do
 
   defmacro is_identifier_literal(c) do
     quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or
-      unquote(c) in ?0..?9 or unquote(c) in [?-, ?@, ?/, ?!]
+      unquote(c) in ?0..?9 or unquote(c) in [?-, ?/, ?$]
   end
 
   defmacro is_start_of_identifier(c) do
-    quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or unquote(c) === ?@
-  end
-
-  defmacro is_operator_initiater(c) do
-    quote do: unquote(c) in [?+, ?-, ?/, ?*, ?<, ?>, ?~, ?^, ?|, ?&, ?%]
+    quote do: unquote(c) in ?a..?z or unquote(c) in ?A..?Z or unquote(c) === ?$
   end
 
   @keywords [
     'lambda',
     'define',
+    'defun',
+    'return',
+    'object',
     'use',
     'loop',  # for, while
-    'cond',  # if
+    'cond',  # switch
+    'if',
     'case',
     'try',
     'catch',
@@ -59,25 +55,21 @@ defmodule Mi.Token do
     'true',
     'false',
     'nil',
-  ]
 
-  @operators [
+    # Operators
     'not', 'and', 'or', 'eq', 'delete', 'typeof', 'void', 'new', 'instanceof',
-    'in', 'from'
+    'in'
   ]
 
-  @spec new(%{pos: pos_integer, line: pos_integer}, charlist, type) :: Token.t
+  @spec new(%{pos: pos_integer, line: pos_integer}, any, type) :: Token.t
   def new(%{pos: pos, line: line}, value, type) do
     %Token{
-      value: value,
+      value: to_string([value]),
       type: type,
       pos: pos,
       line: line
     }
   end
-
-  @spec operator?(charlist) :: boolean
-  def operator?(value), do: value in @operators
 
   @spec keyword?(charlist) :: boolean
   def keyword?(value), do: value in @keywords
