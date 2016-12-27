@@ -301,7 +301,7 @@ defmodule MiParserTest do
           final_expression: %AST.Expression{operator: :++,
                                             arguments: [%AST.Identifier{name: "i"}]},
           body: [
-            [%AST.Identifier{name: "console/log"}, %AST.Identifier{name: "i"}]          ]
+            [%AST.Identifier{name: "console/log"}, %AST.Identifier{name: "i"}]]
         },
 
         %AST.While{
