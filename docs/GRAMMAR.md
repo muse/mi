@@ -41,15 +41,19 @@ statement ::= lambda
             | if
             | defun
             | object
-            | return ;
+            | return
+            | cond
+            | loop ;
 
 arg-list ::= "(", [ { identifier } ], ")" ;
 
-lambda ::= "lambda", [ "*" ], [ identifier ], arg-list, sexpr ;
+lambda ::= "lambda", [ "*" ], [ identifier ], arg-list, { sexpr } ;
 define ::= "define", [ "*" ], identifier, sexpr ;
 use    ::= "use", ( [ "*" ], string, "'", identifier ) | string ;
 if     ::= "if", sexpr, sexpr, [ sexpr ] ;
-defun  ::= "defun", identifier, arg-list, sexpr ;
-object ::= "object", { sexpr } ;
+defun  ::= "defun", identifier, arg-list, { sexpr } ;
+object ::= "object", { sexpr, sexpr } ;
 return ::= "return", sexpr ;
+cond   ::= "cond", { sexpr, sexpr } ;
+loop   ::= "loop", "(", sexpr, [ sexpr, sexpr ],  ")", { sexpr } ;
 ```
