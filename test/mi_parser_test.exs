@@ -199,12 +199,12 @@ defmodule MiParserTest do
 
       assert [
         %AST.Object{
-          value: %{
-            %AST.Symbol{name: "n"} => %AST.Number{value: "5"},
-            %AST.Symbol{name: "m"} => %AST.Number{value: "10"}
-          }
+          value: [
+            {%AST.Symbol{name: "n"}, %AST.Number{value: "5"}},
+            {%AST.Symbol{name: "m"}, %AST.Number{value: "10"}}
+          ]
         },
-        %AST.Object{value: %{}}
+        %AST.Object{value: []}
       ] === ast
     end
 
@@ -231,6 +231,43 @@ defmodule MiParserTest do
                 ]}
             ]
           }
+        }
+      ] === ast
+    end
+
+    test "Cond statements are parsed" do
+      {:ok, ast} = Parser.parse("""
+      (cond
+        (eq "a" "b")
+          1
+        (eq "c" "d")
+          2
+        (eq 5 5)
+          true)
+      """)
+
+      assert [
+        %AST.Condition{
+          conditions: [
+            {
+              %AST.Expression{operator: :eq,
+                              arguments: [%AST.String{value: "a"},
+                                          %AST.String{value: "b"}]},
+              %AST.Number{value: "1"}
+            },
+            {
+              %AST.Expression{operator: :eq,
+                              arguments: [%AST.String{value: "c"},
+                                          %AST.String{value: "d"}]},
+              %AST.Number{value: "2"}
+            },
+            {
+              %AST.Expression{operator: :eq,
+                              arguments: [%AST.Number{value: "5"},
+                                          %AST.Number{value: "5"}]},
+              %AST.Bool{value: "true"}
+            }
+          ]
         }
       ] === ast
     end

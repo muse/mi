@@ -27,7 +27,8 @@ defmodule Mi.Parser do
 
   @operators @unary_operators ++ @multi_arity_operators
 
-  @statements [:lambda, :define, :use, :if, :ternary, :defun, :object, :return]
+  @statements [:lambda, :define, :use, :if, :ternary, :defun, :object, :return,
+               :cond]
 
   defmacrop is_unary(operator) do
     quote do: unquote(operator) in @unary_operators
@@ -152,6 +153,7 @@ defmodule Mi.Parser do
       :ternary -> parse_ternary(rest)
       :defun   -> parse_defun(rest)
       :return  -> parse_return(rest)
+      :cond    -> parse_cond(rest)
       _        -> error(token, "unexpected token `#{token}'")
     end
   end
@@ -246,22 +248,23 @@ defmodule Mi.Parser do
                                   lexical_this?: lexical_this?}}
   end
 
-  @spec parse_define([Token.t], boolean, []) :: node_result | tree_result
-  defp parse_define(tokens, default? \\ false, nodes \\ [])
-  defp parse_define([%Token{type: :*} | rest], _, _) do
-    parse_define(rest, true)
-  end
-  defp parse_define([%Token{type: :cparen} | rest], _, [node]) do
+  @spec parse_define([Token.t]) :: node_result | tree_result
+  defp parse_define([%Token{type: :*} | rest]), do: do_parse_define(rest, true)
+  defp parse_define(tokens), do: do_parse_define(tokens, false)
+
+  @spec do_parse_define([Token.t], boolean, []) :: node_result | tree_result
+  defp do_parse_define(tokens, default?, nodes \\ [])
+  defp do_parse_define([%Token{type: :cparen} | rest], _, [node]) do
     {:ok, rest, node} # Single define, don't return a list
   end
-  defp parse_define([%Token{type: :cparen} | rest], _, nodes) do
+  defp do_parse_define([%Token{type: :cparen} | rest], _, nodes) do
     {:ok, rest, nodes |> Enum.reverse |> List.flatten }
   end
-  defp parse_define(tokens, default?, nodes) do
+  defp do_parse_define(tokens, default?, nodes) do
     with {:ok, rest, name}  <- expect(tokens, :identifier),
          {:ok, rest, value} <- parse_sexpr(rest) do
       node = %AST.Variable{name: name.value, value: value, default?: default?}
-      parse_define(rest, default?, [node | nodes])
+      do_parse_define(rest, default?, [node | nodes])
     end
   end
 
@@ -316,15 +319,15 @@ defmodule Mi.Parser do
                                     body: body}}
   end
 
-  @spec parse_object([Token.t], %{AST.tnode => AST.tnode}) :: node_result
-  defp parse_object(tokens, object \\ %{})
+  @spec parse_object([Token.t], [{AST.tnode, AST.tnode}]) :: node_result
+  defp parse_object(tokens, object \\ [])
   defp parse_object([%Token{type: :cparen} | rest], object) do
-    {:ok, rest, %AST.Object{value: object}}
+    {:ok, rest, %AST.Object{value: Enum.reverse(object)}}
   end
   defp parse_object(tokens, object) do
     with {:ok, rest, key}   <- parse_atom(tokens),
          {:ok, rest, value} <- parse_sexpr(rest) do
-      parse_object(rest, Map.merge(object, %{key => value}))
+      parse_object(rest, [{key, value} | object])
     end
   end
 
@@ -336,5 +339,17 @@ defmodule Mi.Parser do
     with {:ok, rest, value} <- parse_sexpr(tokens),
          {:ok, rest, _}     <- expect(rest, ")"),
       do: {:ok, rest, %AST.Return{value: value}}
+  end
+
+  @spec parse_cond([Token.t], [{AST.tnode, AST.tnode}]) :: node_result
+  defp parse_cond(tokens, conditions \\ [])
+  defp parse_cond([%Token{type: :cparen} | rest], conditions) do
+    {:ok, rest, %AST.Condition{conditions: Enum.reverse(conditions)}}
+  end
+  defp parse_cond(tokens, conditions) do
+    with {:ok, rest, condition} <- parse_sexpr(tokens),
+         {:ok, rest, body}      <- parse_sexpr(rest) do
+      parse_cond(rest, [{condition, body} | conditions])
+    end
   end
 end
