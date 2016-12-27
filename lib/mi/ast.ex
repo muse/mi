@@ -20,6 +20,7 @@ defmodule Mi.AST do
                | Condition.t
                | For.t
                | While.t
+               | Case.t
 
   defmodule List do
     defstruct [:items]
@@ -181,6 +182,16 @@ defmodule Mi.AST do
     @type t :: %__MODULE__{
       condition: AST.tnode,
       body: [AST.tnode]
+    }
+  end
+
+  defmodule Case do
+    @enforce_keys [:match]
+    defstruct [:match, :cases]
+
+    @type t :: %__MODULE__{
+      match: AST.tnode,
+      cases: [AST.tnode]
     }
   end
 end

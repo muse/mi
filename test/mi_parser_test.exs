@@ -317,4 +317,23 @@ defmodule MiParserTest do
       ] === ast
     end
   end
+
+  test "Case statements are parsed" do
+    {:ok, ast} = Parser.parse("""
+    (case a
+      ('b 5)
+      ('c 10)
+      ('default 50))
+    """)
+
+    assert [
+      %AST.Case{
+        match: %AST.Identifier{name: "a"},
+        cases: [
+          [%Mi.AST.Symbol{name: "default"}, %Mi.AST.Number{value: "50"}],
+          [%Mi.AST.Symbol{name: "c"}, %Mi.AST.Number{value: "10"}],
+          [%Mi.AST.Symbol{name: "b"}, %Mi.AST.Number{value: "5"}]
+       ]}
+    ] === ast
+  end
 end
