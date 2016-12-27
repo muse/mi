@@ -4,8 +4,6 @@ defmodule Mi.Parser do
   structure.
   """
 
-  require Integer
-
   alias Mi.{Parser, Lexer, Token, AST}
 
   defstruct ast: [], tokens: []
