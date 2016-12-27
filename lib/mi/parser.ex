@@ -375,17 +375,16 @@ defmodule Mi.Parser do
   end
 
   @spec parse_case([Token.t], [{AST.tnode, AST.tnode}]) :: node_result
-  defp parse_case(tokens)
   defp parse_case(tokens) do
     with  {:ok, rest, match} <- parse_atom(tokens),
           {:ok, rest, cases} <- parse_case(rest, []),
       do: {:ok, rest, %AST.Case{match: match, cases: cases}}
   end
   defp parse_case([%Token{type: :cparen} | rest], cases) do
-    {:ok, rest, cases}
+    {:ok, rest, Enum.reverse(cases)}
   end
   defp parse_case(tokens, cases) do
-    with  {:ok, rest, esac} <- parse_sexpr(tokens),
+    with {:ok, rest, esac} <- parse_sexpr(tokens),
       do: parse_case(rest, [esac | cases])
   end
 end

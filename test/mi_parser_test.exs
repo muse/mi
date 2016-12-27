@@ -330,9 +330,9 @@ defmodule MiParserTest do
       %AST.Case{
         match: %AST.Identifier{name: "a"},
         cases: [
-          [%Mi.AST.Symbol{name: "default"}, %Mi.AST.Number{value: "50"}],
+          [%Mi.AST.Symbol{name: "b"}, %Mi.AST.Number{value: "5"}],
           [%Mi.AST.Symbol{name: "c"}, %Mi.AST.Number{value: "10"}],
-          [%Mi.AST.Symbol{name: "b"}, %Mi.AST.Number{value: "5"}]
+          [%Mi.AST.Symbol{name: "default"}, %Mi.AST.Number{value: "50"}]
        ]}
     ] === ast
   end
