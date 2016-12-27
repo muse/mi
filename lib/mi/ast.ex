@@ -17,6 +17,7 @@ defmodule Mi.AST do
                | Function.t
                | Object.t
                | Return.t
+               | Condition.t
 
   defmodule List do
     defstruct [:items]
@@ -144,12 +145,19 @@ defmodule Mi.AST do
     @enforce_keys [:value]
     defstruct [:value]
 
-    @type t :: %__MODULE__{ value: %{AST.tnode => AST.tnode} }
+    @type t :: %__MODULE__{ value: [{AST.tnode, AST.tnode}] }
   end
 
   defmodule Return do
     defstruct [:value]
 
     @type t :: %__MODULE__{ value: AST.tnode }
+  end
+
+  defmodule Condition do
+    @enforce_keys [:conditions]
+    defstruct [:conditions]
+
+    @type t :: %__MODULE__{ conditions: [{AST.tnode, AST.tnode}] }
   end
 end

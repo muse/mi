@@ -19,5 +19,5 @@
     (console/log "Lost!")
   (eq (. binds cpu) (. binds you))
     (console/log "Draw!")
-  (true)
+  'otherwise
     (console/log "Won!"))
