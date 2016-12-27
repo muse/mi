@@ -18,6 +18,8 @@ defmodule Mi.AST do
                | Object.t
                | Return.t
                | Condition.t
+               | For.t
+               | While.t
 
   defmodule List do
     defstruct [:items]
@@ -159,5 +161,26 @@ defmodule Mi.AST do
     defstruct [:conditions]
 
     @type t :: %__MODULE__{ conditions: [{AST.tnode, AST.tnode}] }
+  end
+
+  defmodule For do
+    defstruct [:initialization, :condition, :final_expression, :body]
+
+    @type t :: %__MODULE__{
+      initialization: AST.tnode,
+      condition: AST.tnode,
+      final_expression: AST.tnode,
+      body: [AST.tnode]
+    }
+  end
+
+  defmodule While do
+    @enforce_keys [:condition]
+    defstruct [:condition, :body]
+
+    @type t :: %__MODULE__{
+      condition: AST.tnode,
+      body: [AST.tnode]
+    }
   end
 end

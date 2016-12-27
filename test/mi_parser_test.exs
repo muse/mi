@@ -277,5 +277,44 @@ defmodule MiParserTest do
         }
       ] === ast
     end
+
+    test "Loop statements are parsed" do
+      {:ok, ast} = Parser.parse("""
+      (loop ((define i 0) (<= i 10) (++ i))
+        (console/log i))
+
+      (loop (< i 100)
+        (console/log i)
+        (++ i))
+      """)
+
+      assert [
+        %AST.For{
+          initialization: %AST.Variable{
+            name: "i",
+            value: %AST.Number{value: "0"},
+            default?: false
+          },
+          condition: %AST.Expression{operator: :<=,
+                                     arguments: [%AST.Identifier{name: "i"},
+                                                 %AST.Number{value: "10"}]},
+          final_expression: %AST.Expression{operator: :++,
+                                            arguments: [%AST.Identifier{name: "i"}]},
+          body: [
+            [%AST.Identifier{name: "console/log"}, %AST.Identifier{name: "i"}]          ]
+        },
+
+        %AST.While{
+          condition: %AST.Expression{
+            operator: :<,
+            arguments: [%AST.Identifier{name: "i"}, %AST.Number{value: "100"}]
+          },
+          body: [
+            [%AST.Identifier{name: "console/log"}, %AST.Identifier{name: "i"}],
+            %AST.Expression{operator: :++, arguments: [%AST.Identifier{name: "i"}]}
+          ]
+        }
+      ] === ast
+    end
   end
 end

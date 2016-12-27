@@ -28,7 +28,7 @@ defmodule Mi.Parser do
   @operators @unary_operators ++ @multi_arity_operators
 
   @statements [:lambda, :define, :use, :if, :ternary, :defun, :object, :return,
-               :cond]
+               :cond, :loop]
 
   defmacrop is_unary(operator) do
     quote do: unquote(operator) in @unary_operators
@@ -154,6 +154,7 @@ defmodule Mi.Parser do
       :defun   -> parse_defun(rest)
       :return  -> parse_return(rest)
       :cond    -> parse_cond(rest)
+      :loop    -> parse_loop(rest)
       _        -> error(token, "unexpected token `#{token}'")
     end
   end
@@ -350,6 +351,27 @@ defmodule Mi.Parser do
     with {:ok, rest, condition} <- parse_sexpr(tokens),
          {:ok, rest, body}      <- parse_sexpr(rest) do
       parse_cond(rest, [{condition, body} | conditions])
+    end
+  end
+
+  @spec parse_loop([Token.t]) :: node_result
+  defp parse_loop([token | _] = tokens) do
+    with {:ok, rest, head} <- parse_sexpr(tokens),
+         {:ok, rest, body} <- parse_body(rest),
+         {:ok, rest, _}    <- expect(rest, ")") do
+      case head do
+        [initialization, condition, final_expression] ->
+          {:ok, rest, %AST.For{initialization: initialization,
+                               condition: condition,
+                               final_expression: final_expression, body: body}}
+        [condition, final_expression] ->
+          {:ok, rest, %AST.For{condition: condition,
+                               final_expression: final_expression, body: body}}
+        %{} = condition ->
+          {:ok, rest, %AST.While{condition: condition, body: body}}
+        _ ->
+          error(token, "invalid loop head")
+      end
     end
   end
 end
