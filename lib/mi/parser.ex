@@ -87,16 +87,6 @@ defmodule Mi.Parser do
   end
 
   @spec parse_sexpr([Token.t]) :: tree_result | node_result
-  defp parse_sexpr([%Token{type: :quote}, token | rest] = tokens) do
-    # Quoted S expressions sometimes have a special case, otherwise it's just
-    # ignored
-    case token.type do
-      :oparen     -> parse_literal_list(tokens)
-      :identifier -> {:ok, rest, %AST.Symbol{name: token.value}}
-      :number     -> {:ok, rest, %AST.Symbol{name: token.value}}
-      _           -> parse_sexpr([token | rest]) # TODO: warn about unnecessary quote
-    end
-  end
   defp parse_sexpr([%Token{type: :oparen} | rest]), do: parse_list(rest)
   defp parse_sexpr(tokens), do: parse_atom(tokens)
 
@@ -121,6 +111,16 @@ defmodule Mi.Parser do
   end
 
   @spec parse_atom([Token.t]) :: tree_result | node_result
+  defp parse_atom([%Token{type: :quote}, token | rest] = tokens) do
+    # Quoted atoms sometimes have a special case, otherwise it's just
+    # ignored
+    case token.type do
+      :oparen     -> parse_literal_list(tokens)
+      :identifier -> {:ok, rest, %AST.Symbol{name: token.value}}
+      :number     -> {:ok, rest, %AST.Symbol{name: token.value}}
+      _           -> parse_atom([token | rest]) # TODO: warn about unnecessary quote
+    end
+  end
   defp parse_atom([token | rest]) do
     case token.type do
       :identifier -> {:ok, rest, %AST.Identifier{name: token.value}}
@@ -316,14 +316,15 @@ defmodule Mi.Parser do
                                     body: body}}
   end
 
-  @spec parse_object([Token.t]) :: node_result
-  defp parse_object([token | _] = tokens) do
-    with {:ok, rest, list} <- parse_list(tokens, []) do
-      if Integer.is_even(length(list)) do
-        {:ok, rest, %AST.Object{value: list}}
-      else
-        error(token, "invalid amount of arguments for object (must be even)")
-      end
+  @spec parse_object([Token.t], %{AST.tnode => AST.tnode}) :: node_result
+  defp parse_object(tokens, object \\ %{})
+  defp parse_object([%Token{type: :cparen} | rest], object) do
+    {:ok, rest, %AST.Object{value: object}}
+  end
+  defp parse_object(tokens, object) do
+    with {:ok, rest, key}   <- parse_atom(tokens),
+         {:ok, rest, value} <- parse_sexpr(rest) do
+      parse_object(rest, Map.merge(object, %{key => value}))
     end
   end
 

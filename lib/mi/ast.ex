@@ -144,7 +144,7 @@ defmodule Mi.AST do
     @enforce_keys [:value]
     defstruct [:value]
 
-    @type t :: %__MODULE__{ value: map }
+    @type t :: %__MODULE__{ value: %{AST.tnode => AST.tnode} }
   end
 
   defmodule Return do

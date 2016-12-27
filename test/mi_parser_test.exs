@@ -199,10 +199,12 @@ defmodule MiParserTest do
 
       assert [
         %AST.Object{
-          value: [%AST.Symbol{name: "n"}, %AST.Number{value: "5"},
-                  %AST.Symbol{name: "m"}, %AST.Number{value: "10"}]
+          value: %{
+            %AST.Symbol{name: "n"} => %AST.Number{value: "5"},
+            %AST.Symbol{name: "m"} => %AST.Number{value: "10"}
+          }
         },
-        %AST.Object{value: []}
+        %AST.Object{value: %{}}
       ] === ast
     end
 
