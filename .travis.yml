@@ -5,3 +5,7 @@ elixir:
 
 otp_release:
   - 19.0
+
+notifications:
+  on_success: change
+  on_failure: always
