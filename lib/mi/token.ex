@@ -51,6 +51,7 @@ defmodule Mi.Token do
     'case',
     'try',
     'catch',
+    'finally',
     'throw',
     'true',
     'false',

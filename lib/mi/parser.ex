@@ -4,7 +4,7 @@ defmodule Mi.Parser do
   structure.
   """
 
-  alias Mi.{Parser, Lexer, Token, AST}
+  alias Mi.{Parser, Token, AST}
 
   defstruct ast: [], tokens: []
 
@@ -26,7 +26,7 @@ defmodule Mi.Parser do
   @operators @unary_operators ++ @multi_arity_operators
 
   @statements [:lambda, :define, :use, :if, :ternary, :defun, :object, :return,
-               :cond, :loop, :case]
+               :cond, :loop, :case, :throw, :try]
 
   defmacrop is_unary(operator) do
     quote do: unquote(operator) in @unary_operators
@@ -62,13 +62,8 @@ defmodule Mi.Parser do
     error(token, "unexpected token `#{token}', expecting `#{expected}'")
   end
 
-  @spec parse(String.t) :: {:ok, AST.t} | {:error, String.t}
-  def parse(expr) do
-    case Lexer.lex(expr) do
-      {:ok, tokens} -> do_parse(%Parser{tokens: tokens})
-      error         -> error
-    end
-  end
+  @spec parse([Token.t]) :: {:ok, AST.t} | {:error, String.t}
+  def parse(tokens), do: do_parse(%Parser{tokens: tokens})
 
   @spec do_parse(Parser.t) :: {:ok, AST.t} | {:error, String.t}
   defp do_parse(%Parser{tokens: []} = parser) do
@@ -154,6 +149,8 @@ defmodule Mi.Parser do
       :cond    -> parse_cond(rest)
       :loop    -> parse_loop(rest)
       :case    -> parse_case(rest)
+      :throw   -> parse_throw(rest)
+      :try     -> parse_try(rest)
       _        -> error(token, "unexpected token `#{token}'")
     end
   end
@@ -386,5 +383,42 @@ defmodule Mi.Parser do
   defp parse_case(tokens, cases) do
     with {:ok, rest, esac} <- parse_sexpr(tokens),
       do: parse_case(rest, [esac | cases])
+  end
+
+  @spec parse_throw([Token.t]) :: node_result
+  defp parse_throw(tokens) do
+    with {:ok, rest, expression} <- parse_sexpr(tokens),
+         {:ok, rest, _}          <- expect(rest, ")"),
+      do: {:ok, rest, %AST.Throw{expression: expression}}
+  end
+
+  @spec parse_try([Token.t]) :: node_result
+  defp parse_try(tokens) do
+    with {:ok, rest, body}             <- parse_sexpr(tokens),
+         {:ok, rest, catch_expression} <- parse_catch(rest),
+         {:ok, rest, catch_body}       <- parse_sexpr(rest) do
+      case rest do
+        [%Token{type: :cparen} | rest] ->
+          {:ok, rest, %AST.Try{body: body, catch_expression: catch_expression,
+                               catch_body: catch_body}}
+        [%Token{type: :finally} | rest] ->
+          with {:ok, rest, finally_body} <- parse_sexpr(rest),
+               {:ok, rest, _}            <- expect(rest, ")"),
+            do: {:ok, rest, %AST.Try{body: body, catch_expression: catch_expression,
+                                     catch_body: catch_body,
+                                     finally_body: finally_body}}
+        [token | _] ->
+          error(token, "expecting finally or `)', got `#{token}'")
+      end
+    end
+  end
+
+  @spec parse_catch([Token.t]) :: node_result
+  defp parse_catch(tokens) do
+    with {:ok, rest, _}          <- expect(tokens, "("),
+         {:ok, rest, _}          <- expect(rest, :catch),
+         {:ok, rest, expression} <- parse_atom(rest),
+         {:ok, rest, _}          <- expect(rest, ")"),
+      do: {:ok, rest, expression}
   end
 end

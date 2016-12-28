@@ -21,6 +21,8 @@ defmodule Mi.AST do
                | For.t
                | While.t
                | Case.t
+               | Throw.t
+               | Try.t
 
   defmodule List do
     defstruct [:items]
@@ -192,6 +194,25 @@ defmodule Mi.AST do
     @type t :: %__MODULE__{
       match: AST.tnode,
       cases: [AST.tnode]
+    }
+  end
+
+  defmodule Throw do
+    @enforce_keys [:expression]
+    defstruct [:expression]
+
+    @type t :: %__MODULE__{ expression: AST.tnode }
+  end
+
+  defmodule Try do
+    @enforce_keys [:catch_expression]
+    defstruct [:body, :catch_expression, :catch_body, :finally_body]
+
+    @type t :: %__MODULE__{
+      body: [AST.tnode],
+      catch_expression: AST.tnode,
+      catch_body: [AST.tnode],
+      finally_body: [AST.tnode]
     }
   end
 end

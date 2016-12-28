@@ -1,10 +1,15 @@
 defmodule MiParserTest do
-  alias Mi.{Parser, AST}
+  alias Mi.{Lexer, Parser, AST}
   use   ExUnit.Case
+
+  defp lex_and_parse(expr) do
+    with {:ok, tokens} <- Lexer.lex(expr),
+      do: Parser.parse(tokens)
+  end
 
   describe "&Parser.parse/1" do
     test "Literal lists are parsed" do
-      {:ok, ast} = Parser.parse("('(1 \"ok\" 3 4) '() '('()))")
+      {:ok, ast} = lex_and_parse("('(1 \"ok\" 3 4) '() '('()))")
 
       assert [[
         %AST.List{items: [%AST.Number{value: "1"},
@@ -17,7 +22,7 @@ defmodule MiParserTest do
     end
 
     test "Expressions are parsed" do
-      {:ok, ast} = Parser.parse("(+ 1 2 (* 3 3))")
+      {:ok, ast} = lex_and_parse("(+ 1 2 (* 3 3))")
 
       assert [
         %AST.Expression{
@@ -35,22 +40,22 @@ defmodule MiParserTest do
     end
 
     test "Expressions error accordingly" do
-      {:error, error} = Parser.parse("(* 1)")
+      {:error, error} = lex_and_parse("(* 1)")
       assert String.contains?(error, "not enough arguments")
 
-      {:error, error} = Parser.parse("(typeof true false)")
+      {:error, error} = lex_and_parse("(typeof true false)")
       assert String.contains?(error, "too many arguments")
 
-      {:error, error} = Parser.parse("(-)")
+      {:error, error} = lex_and_parse("(-)")
       assert String.contains?(error, "missing argument(s)")
 
-      assert {:ok, _} = Parser.parse("(- 1)")
-      assert {:ok, _} = Parser.parse("(- 1 2)")
-      assert {:ok, _} = Parser.parse("(- 1 2 3)")
+      assert {:ok, _} = lex_and_parse("(- 1)")
+      assert {:ok, _} = lex_and_parse("(- 1 2)")
+      assert {:ok, _} = lex_and_parse("(- 1 2 3)")
     end
 
     test "Lambda statements are parsed" do
-      {:ok, ast} = Parser.parse("""
+      {:ok, ast} = lex_and_parse("""
       (lambda (a b) (* a b))
       (lambda* () this)
       (lambda named () 5)
@@ -73,7 +78,7 @@ defmodule MiParserTest do
     end
 
     test "Define statements are parsed" do
-      {:ok, ast} = Parser.parse("""
+      {:ok, ast} = lex_and_parse("""
       (define a 5)
       (define a 5 b 6 c 7)
       (define* b 6)
@@ -91,7 +96,7 @@ defmodule MiParserTest do
     end
 
     test "Use statements are parsed" do
-      {:ok, ast} = Parser.parse("(use \"http\") (use* \"http\" 'myhttp)")
+      {:ok, ast} = lex_and_parse("(use \"http\") (use* \"http\" 'myhttp)")
 
       assert [
         %AST.Use{module: "http", name: "http"},
@@ -100,14 +105,14 @@ defmodule MiParserTest do
     end
 
     test "Use statements error accordingly" do
-      assert {:error, _} = Parser.parse("(use)")
-      assert {:error, _} = Parser.parse("(use* \"http\" myhttp)")
-      assert {:error, _} = Parser.parse("(use* \"http\")")
-      assert {:error, _} = Parser.parse("(use* \"http\" 'myhttp \"extra string\")")
+      assert {:error, _} = lex_and_parse("(use)")
+      assert {:error, _} = lex_and_parse("(use* \"http\" myhttp)")
+      assert {:error, _} = lex_and_parse("(use* \"http\")")
+      assert {:error, _} = lex_and_parse("(use* \"http\" 'myhttp \"extra string\")")
     end
 
     test "If statements are parsed" do
-      {:ok, ast} = Parser.parse("""
+      {:ok, ast} = lex_and_parse("""
       (if (not true) something-wrong)
       (if (eq "pie" "cake")
         "what?"
@@ -130,7 +135,7 @@ defmodule MiParserTest do
     end
 
     test "Ternary statements are parsed" do
-      {:ok, ast} = Parser.parse("(?: (eq 2 2) 'ok 'world-on-fire)")
+      {:ok, ast} = lex_and_parse("(?: (eq 2 2) 'ok 'world-on-fire)")
 
       assert [
         %AST.Ternary{
@@ -143,7 +148,7 @@ defmodule MiParserTest do
     end
 
     test "Defun statements are parsed" do
-      {:ok, ast} = Parser.parse("""
+      {:ok, ast} = lex_and_parse("""
       (defun factorial (n)
         (if (eq n 0)
           0
@@ -192,7 +197,7 @@ defmodule MiParserTest do
     end
 
     test "Object literals are parsed" do
-      {:ok, ast} = Parser.parse("""
+      {:ok, ast} = lex_and_parse("""
       (object 'n 5 'm 10)
       (object)
       """)
@@ -209,7 +214,7 @@ defmodule MiParserTest do
     end
 
     test "Return statements are parsed" do
-      {:ok, ast} = Parser.parse("""
+      {:ok, ast} = lex_and_parse("""
       (return)
       (return a)
       (return (lambda (x) (+ x 1)))
@@ -236,7 +241,7 @@ defmodule MiParserTest do
     end
 
     test "Cond statements are parsed" do
-      {:ok, ast} = Parser.parse("""
+      {:ok, ast} = lex_and_parse("""
       (cond
         (eq "a" "b")
           1
@@ -279,7 +284,7 @@ defmodule MiParserTest do
     end
 
     test "Loop statements are parsed" do
-      {:ok, ast} = Parser.parse("""
+      {:ok, ast} = lex_and_parse("""
       (loop ((define i 0) (<= i 10) (++ i))
         (console/log i))
 
@@ -319,7 +324,7 @@ defmodule MiParserTest do
   end
 
   test "Case statements are parsed" do
-    {:ok, ast} = Parser.parse("""
+    {:ok, ast} = lex_and_parse("""
     (case a
       ('b 5)
       ('c 10)
@@ -334,6 +339,64 @@ defmodule MiParserTest do
           [%Mi.AST.Symbol{name: "c"}, %Mi.AST.Number{value: "10"}],
           [%Mi.AST.Symbol{name: "default"}, %Mi.AST.Number{value: "50"}]
        ]}
+    ] === ast
+  end
+
+  test "Throw statements are parsed" do
+    {:ok, ast} = lex_and_parse("""
+    (throw (new (Error "oh no!")))
+    (throw 'panic)
+    """)
+
+    assert [
+      %AST.Throw{
+        expression: %AST.Expression{
+          operator: :new,
+          arguments: [
+            [%AST.Identifier{name: "Error"}, %AST.String{value: "oh no!"}]
+          ]
+      }},
+      %AST.Throw{
+        expression: %AST.Symbol{name: "panic"}
+      }
+    ] === ast
+  end
+
+  test "Try catch statements are parsed" do
+    {:ok, ast} = lex_and_parse("""
+    (try
+      (throw (new (Error "oops")))
+    (catch e)
+      (console/log e)
+    finally
+      (console/log "Done"))
+
+    (try
+      a
+    (catch e)
+      b)
+    """)
+
+    assert [
+      %AST.Try{
+        body: %AST.Throw{
+          expression: %AST.Expression{
+            operator: :new,
+            arguments: [
+              [%AST.Identifier{name: "Error"}, %AST.String{value: "oops"}]
+            ]}
+        },
+        catch_expression: %AST.Identifier{name: "e"},
+        catch_body: [%AST.Identifier{name: "console/log"},
+                     %AST.Identifier{name: "e"}],
+        finally_body: [%AST.Identifier{name: "console/log"},
+                       %AST.String{value: "Done"}],
+      },
+      %AST.Try{
+        body: %AST.Identifier{name: "a"},
+        catch_expression: %AST.Identifier{name: "e"},
+        catch_body: %AST.Identifier{name: "b"}
+      }
     ] === ast
   end
 end
