@@ -21,8 +21,20 @@ defmodule MiCodegenTest do
       assert program === "(1 + 2 + 3 + (4 * 5));"
     end
 
+    test "Define is generated" do
+      {:ok, program} = lex_parse_gen("""
+      (define x (* 8 8))
+      (define* y 'default)
+      """)
+
+      assert program === "var x = (8 * 8);var y = y || \"default\";"
+    end
+
     test "Lambdas are generated" do
-      {:ok, program} = lex_parse_gen("(lambda (x) (+ x 5))")
+      {:ok, program} = lex_parse_gen("""
+      (lambda (x) (+ x 5))
+      (lambda test (x) (+ x 5))
+      """)
 
       IO.puts program
     end

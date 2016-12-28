@@ -99,7 +99,7 @@ defmodule Mi.AST do
 
     @type t :: %__MODULE__{
       name: String.t,
-      value: String.t,
+      value: AST.tnode,
       default?: boolean
     }
   end
