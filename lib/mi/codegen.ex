@@ -1,7 +1,7 @@
 defmodule Mi.Codegen do
   alias Mi.{AST, Codegen}
 
-  defstruct program: "", ast: []
+  defstruct program: [], ast: []
 
   @type t :: %__MODULE__{
     program: String.t,
@@ -13,11 +13,11 @@ defmodule Mi.Codegen do
 
   @spec do_generate(Codegen.t) :: {:ok, String.t}
   defp do_generate(%Codegen{ast: [], program: program}) do
-    {:ok, program}
+    {:ok, program |> Enum.reverse |> Enum.join}
   end
   defp do_generate(%Codegen{ast: [node | rest]} = codegen) do
     result = generate_top_level(node)
-    do_generate(%{codegen | ast: rest, program: codegen.program <> result})
+    do_generate(%{codegen | ast: rest, program: [result | codegen.program]})
   end
 
   @spec generate_top_level(AST.tnode) :: String.t
