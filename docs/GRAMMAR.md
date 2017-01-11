@@ -2,7 +2,7 @@
 This document contains Mi's grammar as it is used to parse source files.
 
 ```
-program ::= [ { list } ] ;
+program ::= [ { sexpr } ] ;
 
 list  ::= "(", { sexpr } | statement | expression | , ")" ;
 sexpr ::= [ "'" ], atom | list ;
