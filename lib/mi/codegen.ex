@@ -58,6 +58,11 @@ defmodule Mi.Codegen do
     expression = generated_args |> Enum.reverse |> Enum.join(" #{expr.operator} ")
     "(#{expression})"
   end
+  defp generate_expression(%AST.Expression{arguments: [], operator: :.} = expr, generated_args) do
+    # No parentheses and spaces around operator `.'
+    expression = generated_args |> Enum.reverse |> Enum.join("#{expr.operator}")
+    "#{expression}"
+  end
   defp generate_expression(%AST.Expression{arguments: [arg | rest]} = expr, generated_args) do
     result = generate_node(arg)
     generate_expression(%{expr | arguments: rest}, [result | generated_args])
@@ -67,7 +72,14 @@ defmodule Mi.Codegen do
   defp generate_lambda(%AST.Lambda{} = lambda) do
     params = Enum.join(lambda.parameters, ", ")
     body = generate_body(lambda.body)
-    "function #{lambda.name}(#{params}) { #{body} }"
+
+    if length(lambda.body) > 1 do
+      "function #{lambda.name}(#{params}) {
+      #{body}
+      }"
+    else
+      "function #{lambda.name}(#{params}) { #{body} }"
+    end
   end
 
   @spec generate_body([AST.tnode], [String.t]) :: String.t
