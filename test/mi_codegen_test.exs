@@ -31,9 +31,27 @@ defmodule MiCodegenTest do
     end
 
     test "Lambdas are generated" do
-      {:ok, program} = lex_parse_gen("""
+      {:ok, _} = lex_parse_gen("""
       (lambda (x) (+ x 5))
       (lambda test (x) (+ x 5))
+      """)
+    end
+
+    test "Functions are generated" do
+      {:ok, _} = lex_parse_gen("""
+      (defun test () 5)
+      """)
+    end
+
+    test "Function calls are generated" do
+      {:ok, _} = lex_parse_gen("""
+      (test 1 2 3)
+      """)
+    end
+
+    test "Use statements are generated" do
+      {:ok, program} = lex_parse_gen("""
+      (use* "http" 'myhttp)
       """)
 
       IO.puts program

@@ -32,12 +32,16 @@ defmodule Mi.Codegen do
       %AST.Expression{} -> generate_expression(node)
       %AST.Lambda{}     -> generate_lambda(node)
       %AST.Variable{}   -> generate_variable(node)
+      %AST.Function{}   -> generate_function(node)
+      %AST.If{}         -> generate_if(node)
+      %AST.Use{}        -> generate_use(node)
       %AST.Number{}     -> node.value
       %AST.String{}     -> ~s("#{node.value}")
       %AST.Symbol{}     -> ~s("#{node.name}")
-      %AST.Identifier{} -> node.name
+      %AST.Identifier{} -> String.replace(node.name, "/", ".")
       %AST.Bool{}       -> node.value
       %AST.Nil{}        -> "null"
+      [func | args]     -> generate_func_call(func, args)
     end
   end
 
@@ -101,5 +105,46 @@ defmodule Mi.Codegen do
         else: value
 
     "var #{variable.name} = #{expression}"
+  end
+
+  @spec generate_function(AST.Function.t) :: String.t
+  defp generate_function(%AST.Function{} = function) do
+    params = Enum.join(function.parameters, ", ")
+    body = generate_body(function.body)
+
+    "function #{function.name}(#{params}) {
+#{body}
+}"
+  end
+
+  @spec generate_if(AST.If.t) :: String.t
+  defp generate_if(%AST.If{} = if_stmt) do
+    condition = generate_node(if_stmt.condition)
+    true_body = generate_body(if_stmt.true_body)
+
+    if if_stmt.false_body do
+      false_body = generate_body(if_stmt.false_body)
+      "if (#{condition}) {
+      #{true_body}
+      } else {
+      #{false_body}
+      }"
+    else
+      "if (#{condition}) {
+      #{true_body}
+      }"
+    end
+  end
+
+  @spec generate_use(AST.Use.t) :: String.t
+  defp generate_use(%AST.Use{} = use_stmt) do
+    "var #{use_stmt.name} = require(\"#{use_stmt.module}\")"
+  end
+
+  @spec generate_func_call(AST.tnode, [AST.tnode]) :: String.t
+  defp generate_func_call(func, args) do
+    name = generate_node(func)
+    args = Enum.map(args, &generate_node/1) |> Enum.join(", ")
+    "#{name}(#{args})"
   end
 end
