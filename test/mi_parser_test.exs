@@ -1,15 +1,30 @@
 defmodule MiParserTest do
-  alias Mi.{Lexer, Parser, AST}
+  alias Mi.{Token, Parser, AST}
   use   ExUnit.Case
-
-  defp lex_and_parse(expr) do
-    with {:ok, tokens} <- Lexer.lex(expr),
-      do: Parser.parse(tokens)
-  end
 
   describe "&Parser.parse/1" do
     test "Literal lists are parsed" do
-      {:ok, ast} = lex_and_parse("('(1 \"ok\" 3 4) '() '('()))")
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :quote, value: "'"},
+         %Token{line: 1, pos: 3, type: :oparen, value: "("},
+         %Token{line: 1, pos: 4, type: :number, value: "1"},
+         %Token{line: 1, pos: 6, type: :string, value: "ok"},
+         %Token{line: 1, pos: 9, type: :number, value: "3"},
+         %Token{line: 1, pos: 11, type: :number, value: "4"},
+         %Token{line: 1, pos: 12, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 14, type: :quote, value: "'"},
+         %Token{line: 1, pos: 15, type: :oparen, value: "("},
+         %Token{line: 1, pos: 16, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 18, type: :quote, value: "'"},
+         %Token{line: 1, pos: 19, type: :oparen, value: "("},
+         %Token{line: 1, pos: 20, type: :quote, value: "'"},
+         %Token{line: 1, pos: 21, type: :oparen, value: "("},
+         %Token{line: 1, pos: 22, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 23, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 24, type: :cparen, value: ")"}]
+
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [[
         %AST.List{items: [%AST.Number{value: "1"},
@@ -22,7 +37,19 @@ defmodule MiParserTest do
     end
 
     test "Expressions are parsed" do
-      {:ok, ast} = lex_and_parse("(+ 1 2 (* 3 3))")
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :+, value: "+"},
+         %Token{line: 1, pos: 4, type: :number, value: "1"},
+         %Token{line: 1, pos: 6, type: :number, value: "2"},
+         %Token{line: 1, pos: 8, type: :oparen, value: "("},
+         %Token{line: 1, pos: 9, type: :*, value: "*"},
+         %Token{line: 1, pos: 11, type: :number, value: "3"},
+         %Token{line: 1, pos: 13, type: :number, value: "3"},
+         %Token{line: 1, pos: 14, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 15, type: :cparen, value: ")"}]
+
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [
         %AST.Expression{
@@ -40,26 +67,90 @@ defmodule MiParserTest do
     end
 
     test "Expressions error accordingly" do
-      {:error, error} = lex_and_parse("(* 1)")
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :*, value: "*"},
+         %Token{line: 1, pos: 4, type: :number, value: "1"},
+         %Token{line: 1, pos: 5, type: :cparen, value: ")"}]
+
+      {:error, error} = Parser.parse(tokens)
       assert String.contains?(error, "not enough arguments")
 
-      {:error, error} = lex_and_parse("(typeof true false)")
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :typeof, value: "typeof"},
+         %Token{line: 1, pos: 9, type: true, value: "true"},
+         %Token{line: 1, pos: 14, type: false, value: "false"},
+         %Token{line: 1, pos: 19, type: :cparen, value: ")"}]
+
+      {:error, error} = Parser.parse(tokens)
       assert String.contains?(error, "too many arguments")
 
-      {:error, error} = lex_and_parse("(-)")
-      assert String.contains?(error, "missing argument(s)")
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :-, value: "-"},
+         %Token{line: 1, pos: 3, type: :cparen, value: ")"}]
 
-      assert {:ok, _} = lex_and_parse("(- 1)")
-      assert {:ok, _} = lex_and_parse("(- 1 2)")
-      assert {:ok, _} = lex_and_parse("(- 1 2 3)")
+      {:error, error} = Parser.parse(tokens)
+      assert String.contains?(error, "missing argument(s)")
+    end
+
+    test "Unary operators allow 1 or more arguments" do
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :-, value: "-"},
+         %Token{line: 1, pos: 4, type: :number, value: "1"},
+         %Token{line: 1, pos: 5, type: :cparen, value: ")"}]
+      assert {:ok, _} = Parser.parse(tokens)
+
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :-, value: "-"},
+         %Token{line: 1, pos: 4, type: :number, value: "1"},
+         %Token{line: 1, pos: 6, type: :number, value: "2"},
+         %Token{line: 1, pos: 7, type: :cparen, value: ")"}]
+      assert {:ok, _} = Parser.parse(tokens)
+
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :-, value: "-"},
+         %Token{line: 1, pos: 4, type: :number, value: "1"},
+         %Token{line: 1, pos: 6, type: :number, value: "2"},
+         %Token{line: 1, pos: 8, type: :number, value: "3"},
+         %Token{line: 1, pos: 9, type: :cparen, value: ")"}]
+      assert {:ok, _} = Parser.parse(tokens)
     end
 
     test "Lambda statements are parsed" do
-      {:ok, ast} = lex_and_parse("""
-      (lambda (a b) (* a b))
-      (lambda* () this)
-      (lambda named () 5)
-      """)
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :lambda, value: "lambda"},
+         %Token{line: 1, pos: 9, type: :oparen, value: "("},
+         %Token{line: 1, pos: 10, type: :identifier, value: "a"},
+         %Token{line: 1, pos: 12, type: :identifier, value: "b"},
+         %Token{line: 1, pos: 13, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 15, type: :oparen, value: "("},
+         %Token{line: 1, pos: 16, type: :*, value: "*"},
+         %Token{line: 1, pos: 18, type: :identifier, value: "a"},
+         %Token{line: 1, pos: 20, type: :identifier, value: "b"},
+         %Token{line: 1, pos: 21, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 22, type: :cparen, value: ")"},
+         %Token{line: 2, pos: 7, type: :oparen, value: "("},
+         %Token{line: 2, pos: 8, type: :lambda, value: "lambda"},
+         %Token{line: 2, pos: 14, type: :*, value: "*"},
+         %Token{line: 2, pos: 16, type: :oparen, value: "("},
+         %Token{line: 2, pos: 17, type: :cparen, value: ")"},
+         %Token{line: 2, pos: 19, type: :identifier, value: "this"},
+         %Token{line: 2, pos: 23, type: :cparen, value: ")"},
+         %Token{line: 3, pos: 7, type: :oparen, value: "("},
+         %Token{line: 3, pos: 8, type: :lambda, value: "lambda"},
+         %Token{line: 3, pos: 15, type: :identifier, value: "named"},
+         %Token{line: 3, pos: 21, type: :oparen, value: "("},
+         %Token{line: 3, pos: 22, type: :cparen, value: ")"},
+         %Token{line: 3, pos: 24, type: :number, value: "5"},
+         %Token{line: 3, pos: 25, type: :cparen, value: ")"}]
+
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [
         %AST.Lambda{name: nil,
@@ -78,11 +169,29 @@ defmodule MiParserTest do
     end
 
     test "Define statements are parsed" do
-      {:ok, ast} = lex_and_parse("""
-      (define a 5)
-      (define a 5 b 6 c 7)
-      (define* b 6)
-      """)
+      tokens =
+        [%Token{line: 1, pos: 7, type: :oparen, value: "("},
+         %Token{line: 1, pos: 8, type: :define, value: "define"},
+         %Token{line: 1, pos: 15, type: :identifier, value: "a"},
+         %Token{line: 1, pos: 17, type: :number, value: "5"},
+         %Token{line: 1, pos: 18, type: :cparen, value: ")"},
+         %Token{line: 2, pos: 7, type: :oparen, value: "("},
+         %Token{line: 2, pos: 8, type: :define, value: "define"},
+         %Token{line: 2, pos: 15, type: :identifier, value: "a"},
+         %Token{line: 2, pos: 17, type: :number, value: "5"},
+         %Token{line: 2, pos: 19, type: :identifier, value: "b"},
+         %Token{line: 2, pos: 21, type: :number, value: "6"},
+         %Token{line: 2, pos: 23, type: :identifier, value: "c"},
+         %Token{line: 2, pos: 25, type: :number, value: "7"},
+         %Token{line: 2, pos: 26, type: :cparen, value: ")"},
+         %Token{line: 3, pos: 7, type: :oparen, value: "("},
+         %Token{line: 3, pos: 8, type: :define, value: "define"},
+         %Token{line: 3, pos: 14, type: :*, value: "*"},
+         %Token{line: 3, pos: 16, type: :identifier, value: "b"},
+         %Token{line: 3, pos: 18, type: :number, value: "6"},
+         %Token{line: 3, pos: 19, type: :cparen, value: ")"}]
+
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [
         %AST.Variable{name: "a", value: %AST.Number{value: "5"}, default?: false},
@@ -96,7 +205,20 @@ defmodule MiParserTest do
     end
 
     test "Use statements are parsed" do
-      {:ok, ast} = lex_and_parse("(use \"http\") (use* \"http\" 'myhttp)")
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :use, value: "use"},
+         %Token{line: 1, pos: 6, type: :string, value: "http"},
+         %Token{line: 1, pos: 10, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 12, type: :oparen, value: "("},
+         %Token{line: 1, pos: 13, type: :use, value: "use"},
+         %Token{line: 1, pos: 16, type: :*, value: "*"},
+         %Token{line: 1, pos: 18, type: :string, value: "http"},
+         %Token{line: 1, pos: 23, type: :quote, value: "'"},
+         %Token{line: 1, pos: 24, type: :identifier, value: "myhttp"},
+         %Token{line: 1, pos: 30, type: :cparen, value: ")"}]
+
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [
         %AST.Use{module: "http", name: "http"},
@@ -105,19 +227,62 @@ defmodule MiParserTest do
     end
 
     test "Use statements error accordingly" do
-      assert {:error, _} = lex_and_parse("(use)")
-      assert {:error, _} = lex_and_parse("(use* \"http\" myhttp)")
-      assert {:error, _} = lex_and_parse("(use* \"http\")")
-      assert {:error, _} = lex_and_parse("(use* \"http\" 'myhttp \"extra string\")")
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :use, value: "use"},
+         %Token{line: 1, pos: 5, type: :cparen, value: ")"}]
+      assert {:error, _} = Parser.parse(tokens)
+
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :use, value: "use"},
+         %Token{line: 1, pos: 5, type: :*, value: "*"},
+         %Token{line: 1, pos: 7, type: :string, value: "http"},
+         %Token{line: 1, pos: 12, type: :identifier, value: "myhttp"},
+         %Token{line: 1, pos: 18, type: :cparen, value: ")"}]
+      assert {:error, _} = Parser.parse(tokens)
+
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :use, value: "use"},
+         %Token{line: 1, pos: 5, type: :*, value: "*"},
+         %Token{line: 1, pos: 7, type: :string, value: "http"},
+         %Token{line: 1, pos: 11, type: :cparen, value: ")"}]
+      assert {:error, _} = Parser.parse(tokens)
+
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :use, value: "use"},
+         %Token{line: 1, pos: 5, type: :*, value: "*"},
+         %Token{line: 1, pos: 7, type: :string, value: "http"},
+         %Token{line: 1, pos: 12, type: :quote, value: "'"},
+         %Token{line: 1, pos: 13, type: :identifier, value: "myhttp"},
+         %Token{line: 1, pos: 20, type: :string, value: "extra string"},
+         %Token{line: 1, pos: 32, type: :cparen, value: ")"}]
+      assert {:error, _} = Parser.parse(tokens)
     end
 
     test "If statements are parsed" do
-      {:ok, ast} = lex_and_parse("""
-      (if (not true) something-wrong)
-      (if (eq "pie" "cake")
-        "what?"
-        "thought so")
-      """)
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :if, value: "if"},
+         %Token{line: 1, pos: 5, type: :oparen, value: "("},
+         %Token{line: 1, pos: 6, type: :not, value: "not"},
+         %Token{line: 1, pos: 10, type: true, value: "true"},
+         %Token{line: 1, pos: 14, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 16, type: :identifier, value: "something-wrong"},
+         %Token{line: 1, pos: 31, type: :cparen, value: ")"},
+         %Token{line: 2, pos: 7, type: :oparen, value: "("},
+         %Token{line: 2, pos: 8, type: :if, value: "if"},
+         %Token{line: 2, pos: 11, type: :oparen, value: "("},
+         %Token{line: 2, pos: 12, type: :eq, value: "eq"},
+         %Token{line: 2, pos: 15, type: :string, value: "pie"},
+         %Token{line: 2, pos: 19, type: :string, value: "cake"},
+         %Token{line: 2, pos: 23, type: :cparen, value: ")"},
+         %Token{line: 3, pos: 9, type: :string, value: "what?"},
+         %Token{line: 4, pos: 9, type: :string, value: "thought so"},
+         %Token{line: 4, pos: 19, type: :cparen, value: ")"}]
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [
         %AST.If{condition: %AST.Expression{operator: :not,
@@ -135,7 +300,21 @@ defmodule MiParserTest do
     end
 
     test "Ternary statements are parsed" do
-      {:ok, ast} = lex_and_parse("(?: (eq 2 2) 'ok 'world-on-fire)")
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :ternary, value: "?:"},
+         %Token{line: 1, pos: 5, type: :oparen, value: "("},
+         %Token{line: 1, pos: 6, type: :eq, value: "eq"},
+         %Token{line: 1, pos: 9, type: :number, value: "2"},
+         %Token{line: 1, pos: 11, type: :number, value: "2"},
+         %Token{line: 1, pos: 12, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 14, type: :quote, value: "'"},
+         %Token{line: 1, pos: 15, type: :identifier, value: "ok"},
+         %Token{line: 1, pos: 18, type: :quote, value: "'"},
+         %Token{line: 1, pos: 19, type: :identifier, value: "world-on-fire"},
+         %Token{line: 1, pos: 32, type: :cparen, value: ")"}]
+
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [
         %AST.Ternary{
@@ -148,16 +327,54 @@ defmodule MiParserTest do
     end
 
     test "Defun statements are parsed" do
-      {:ok, ast} = lex_and_parse("""
-      (defun factorial (n)
-        (if (eq n 0)
-          0
-          (* x (fact (- x 1)))))
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :defun, value: "defun"},
+         %Token{line: 1, pos: 8, type: :identifier, value: "factorial"},
+         %Token{line: 1, pos: 18, type: :oparen, value: "("},
+         %Token{line: 1, pos: 19, type: :identifier, value: "n"},
+         %Token{line: 1, pos: 20, type: :cparen, value: ")"},
+         %Token{line: 2, pos: 9, type: :oparen, value: "("},
+         %Token{line: 2, pos: 10, type: :if, value: "if"},
+         %Token{line: 2, pos: 13, type: :oparen, value: "("},
+         %Token{line: 2, pos: 14, type: :eq, value: "eq"},
+         %Token{line: 2, pos: 17, type: :identifier, value: "n"},
+         %Token{line: 2, pos: 19, type: :number, value: "0"},
+         %Token{line: 2, pos: 20, type: :cparen, value: ")"},
+         %Token{line: 3, pos: 11, type: :number, value: "0"},
+         %Token{line: 4, pos: 11, type: :oparen, value: "("},
+         %Token{line: 4, pos: 12, type: :*, value: "*"},
+         %Token{line: 4, pos: 14, type: :identifier, value: "x"},
+         %Token{line: 4, pos: 16, type: :oparen, value: "("},
+         %Token{line: 4, pos: 17, type: :identifier, value: "fact"},
+         %Token{line: 4, pos: 22, type: :oparen, value: "("},
+         %Token{line: 4, pos: 23, type: :-, value: "-"},
+         %Token{line: 4, pos: 25, type: :identifier, value: "x"},
+         %Token{line: 4, pos: 27, type: :number, value: "1"},
+         %Token{line: 4, pos: 28, type: :cparen, value: ")"},
+         %Token{line: 4, pos: 29, type: :cparen, value: ")"},
+         %Token{line: 4, pos: 30, type: :cparen, value: ")"},
+         %Token{line: 4, pos: 31, type: :cparen, value: ")"},
+         %Token{line: 4, pos: 32, type: :cparen, value: ")"},
+         %Token{line: 6, pos: 7, type: :oparen, value: "("},
+         %Token{line: 6, pos: 8, type: :defun, value: "defun"},
+         %Token{line: 6, pos: 14, type: :identifier, value: "is-5"},
+         %Token{line: 6, pos: 19, type: :oparen, value: "("},
+         %Token{line: 6, pos: 20, type: :identifier, value: "n"},
+         %Token{line: 6, pos: 21, type: :cparen, value: ")"},
+         %Token{line: 7, pos: 9, type: :oparen, value: "("},
+         %Token{line: 7, pos: 10, type: :define, value: "define"},
+         %Token{line: 7, pos: 17, type: :identifier, value: "x"},
+         %Token{line: 7, pos: 19, type: :number, value: "5"},
+         %Token{line: 7, pos: 20, type: :cparen, value: ")"},
+         %Token{line: 8, pos: 9, type: :oparen, value: "("},
+         %Token{line: 8, pos: 10, type: :eq, value: "eq"},
+         %Token{line: 8, pos: 13, type: :identifier, value: "n"},
+         %Token{line: 8, pos: 15, type: :number, value: "5"},
+         %Token{line: 8, pos: 16, type: :cparen, value: ")"},
+         %Token{line: 8, pos: 17, type: :cparen, value: ")"}]
 
-      (defun is-5 (n)
-        (define x 5)
-        (eq n 5))
-      """)
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [
         %AST.Function{
@@ -197,10 +414,21 @@ defmodule MiParserTest do
     end
 
     test "Object literals are parsed" do
-      {:ok, ast} = lex_and_parse("""
-      (object 'n 5 'm 10)
-      (object)
-      """)
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :object, value: "object"},
+         %Token{line: 1, pos: 9, type: :quote, value: "'"},
+         %Token{line: 1, pos: 10, type: :identifier, value: "n"},
+         %Token{line: 1, pos: 12, type: :number, value: "5"},
+         %Token{line: 1, pos: 14, type: :quote, value: "'"},
+         %Token{line: 1, pos: 15, type: :identifier, value: "m"},
+         %Token{line: 1, pos: 17, type: :number, value: "10"},
+         %Token{line: 1, pos: 19, type: :cparen, value: ")"},
+         %Token{line: 2, pos: 7, type: :oparen, value: "("},
+         %Token{line: 2, pos: 8, type: :object, value: "object"},
+         %Token{line: 2, pos: 14, type: :cparen, value: ")"}]
+
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [
         %AST.Object{
@@ -214,11 +442,30 @@ defmodule MiParserTest do
     end
 
     test "Return statements are parsed" do
-      {:ok, ast} = lex_and_parse("""
-      (return)
-      (return a)
-      (return (lambda (x) (+ x 1)))
-      """)
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :return, value: "return"},
+         %Token{line: 1, pos: 8, type: :cparen, value: ")"},
+         %Token{line: 2, pos: 7, type: :oparen, value: "("},
+         %Token{line: 2, pos: 8, type: :return, value: "return"},
+         %Token{line: 2, pos: 15, type: :identifier, value: "a"},
+         %Token{line: 2, pos: 16, type: :cparen, value: ")"},
+         %Token{line: 3, pos: 7, type: :oparen, value: "("},
+         %Token{line: 3, pos: 8, type: :return, value: "return"},
+         %Token{line: 3, pos: 15, type: :oparen, value: "("},
+         %Token{line: 3, pos: 16, type: :lambda, value: "lambda"},
+         %Token{line: 3, pos: 23, type: :oparen, value: "("},
+         %Token{line: 3, pos: 24, type: :identifier, value: "x"},
+         %Token{line: 3, pos: 25, type: :cparen, value: ")"},
+         %Token{line: 3, pos: 27, type: :oparen, value: "("},
+         %Token{line: 3, pos: 28, type: :+, value: "+"},
+         %Token{line: 3, pos: 30, type: :identifier, value: "x"},
+         %Token{line: 3, pos: 32, type: :number, value: "1"},
+         %Token{line: 3, pos: 33, type: :cparen, value: ")"},
+         %Token{line: 3, pos: 34, type: :cparen, value: ")"},
+         %Token{line: 3, pos: 35, type: :cparen, value: ")"}]
+
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [
         %AST.Return{value: nil},
@@ -241,17 +488,33 @@ defmodule MiParserTest do
     end
 
     test "Cond statements are parsed" do
-      {:ok, ast} = lex_and_parse("""
-      (cond
-        (eq "a" "b")
-          1
-        (eq "c" "d")
-          2
-        (eq 5 5)
-          true
-        'otherwise
-          false)
-      """)
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :cond, value: "cond"},
+         %Token{line: 2, pos: 9, type: :oparen, value: "("},
+         %Token{line: 2, pos: 10, type: :eq, value: "eq"},
+         %Token{line: 2, pos: 13, type: :string, value: "a"},
+         %Token{line: 2, pos: 15, type: :string, value: "b"},
+         %Token{line: 2, pos: 16, type: :cparen, value: ")"},
+         %Token{line: 3, pos: 11, type: :number, value: "1"},
+         %Token{line: 4, pos: 9, type: :oparen, value: "("},
+         %Token{line: 4, pos: 10, type: :eq, value: "eq"},
+         %Token{line: 4, pos: 13, type: :string, value: "c"},
+         %Token{line: 4, pos: 15, type: :string, value: "d"},
+         %Token{line: 4, pos: 16, type: :cparen, value: ")"},
+         %Token{line: 5, pos: 11, type: :number, value: "2"},
+         %Token{line: 6, pos: 9, type: :oparen, value: "("},
+         %Token{line: 6, pos: 10, type: :eq, value: "eq"},
+         %Token{line: 6, pos: 13, type: :number, value: "5"},
+         %Token{line: 6, pos: 15, type: :number, value: "5"},
+         %Token{line: 6, pos: 16, type: :cparen, value: ")"},
+         %Token{line: 7, pos: 11, type: true, value: "true"},
+         %Token{line: 8, pos: 9, type: :quote, value: "'"},
+         %Token{line: 8, pos: 10, type: :identifier, value: "otherwise"},
+         %Token{line: 9, pos: 11, type: false, value: "false"},
+         %Token{line: 9, pos: 16, type: :cparen, value: ")"}]
+
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [
         %AST.Condition{
@@ -284,14 +547,48 @@ defmodule MiParserTest do
     end
 
     test "Loop statements are parsed" do
-      {:ok, ast} = lex_and_parse("""
-      (loop ((define i 0) (<= i 10) (++ i))
-        (console/log i))
+      tokens =
+        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+         %Token{line: 1, pos: 2, type: :loop, value: "loop"},
+         %Token{line: 1, pos: 7, type: :oparen, value: "("},
+         %Token{line: 1, pos: 8, type: :oparen, value: "("},
+         %Token{line: 1, pos: 9, type: :define, value: "define"},
+         %Token{line: 1, pos: 16, type: :identifier, value: "i"},
+         %Token{line: 1, pos: 18, type: :number, value: "0"},
+         %Token{line: 1, pos: 19, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 21, type: :oparen, value: "("},
+         %Token{line: 1, pos: 22, type: :<=, value: "<="},
+         %Token{line: 1, pos: 25, type: :identifier, value: "i"},
+         %Token{line: 1, pos: 27, type: :number, value: "10"},
+         %Token{line: 1, pos: 29, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 31, type: :oparen, value: "("},
+         %Token{line: 1, pos: 32, type: :++, value: "++"},
+         %Token{line: 1, pos: 35, type: :identifier, value: "i"},
+         %Token{line: 1, pos: 36, type: :cparen, value: ")"},
+         %Token{line: 1, pos: 37, type: :cparen, value: ")"},
+         %Token{line: 2, pos: 9, type: :oparen, value: "("},
+         %Token{line: 2, pos: 10, type: :identifier, value: "console/log"},
+         %Token{line: 2, pos: 22, type: :identifier, value: "i"},
+         %Token{line: 2, pos: 23, type: :cparen, value: ")"},
+         %Token{line: 2, pos: 24, type: :cparen, value: ")"},
+         %Token{line: 4, pos: 7, type: :oparen, value: "("},
+         %Token{line: 4, pos: 8, type: :loop, value: "loop"},
+         %Token{line: 4, pos: 13, type: :oparen, value: "("},
+         %Token{line: 4, pos: 14, type: :<, value: "<"},
+         %Token{line: 4, pos: 16, type: :identifier, value: "i"},
+         %Token{line: 4, pos: 18, type: :number, value: "100"},
+         %Token{line: 4, pos: 21, type: :cparen, value: ")"},
+         %Token{line: 5, pos: 9, type: :oparen, value: "("},
+         %Token{line: 5, pos: 10, type: :identifier, value: "console/log"},
+         %Token{line: 5, pos: 22, type: :identifier, value: "i"},
+         %Token{line: 5, pos: 23, type: :cparen, value: ")"},
+         %Token{line: 6, pos: 9, type: :oparen, value: "("},
+         %Token{line: 6, pos: 10, type: :++, value: "++"},
+         %Token{line: 6, pos: 13, type: :identifier, value: "i"},
+         %Token{line: 6, pos: 14, type: :cparen, value: ")"},
+         %Token{line: 6, pos: 15, type: :cparen, value: ")"}]
 
-      (loop (< i 100)
-        (console/log i)
-        (++ i))
-      """)
+      {:ok, ast} = Parser.parse(tokens)
 
       assert [
         %AST.For{
@@ -324,12 +621,28 @@ defmodule MiParserTest do
   end
 
   test "Case statements are parsed" do
-    {:ok, ast} = lex_and_parse("""
-    (case a
-      ('b 5)
-      ('c 10)
-      ('default 50))
-    """)
+    tokens =
+      [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+       %Token{line: 1, pos: 2, type: :case, value: "case"},
+       %Token{line: 1, pos: 7, type: :identifier, value: "a"},
+       %Token{line: 2, pos: 7, type: :oparen, value: "("},
+       %Token{line: 2, pos: 8, type: :quote, value: "'"},
+       %Token{line: 2, pos: 9, type: :identifier, value: "b"},
+       %Token{line: 2, pos: 11, type: :number, value: "5"},
+       %Token{line: 2, pos: 12, type: :cparen, value: ")"},
+       %Token{line: 3, pos: 7, type: :oparen, value: "("},
+       %Token{line: 3, pos: 8, type: :quote, value: "'"},
+       %Token{line: 3, pos: 9, type: :identifier, value: "c"},
+       %Token{line: 3, pos: 11, type: :number, value: "10"},
+       %Token{line: 3, pos: 13, type: :cparen, value: ")"},
+       %Token{line: 4, pos: 7, type: :oparen, value: "("},
+       %Token{line: 4, pos: 8, type: :quote, value: "'"},
+       %Token{line: 4, pos: 9, type: :identifier, value: "default"},
+       %Token{line: 4, pos: 17, type: :number, value: "50"},
+       %Token{line: 4, pos: 19, type: :cparen, value: ")"},
+       %Token{line: 4, pos: 20, type: :cparen, value: ")"}]
+
+    {:ok, ast} = Parser.parse(tokens)
 
     assert [
       %AST.Case{
@@ -343,10 +656,24 @@ defmodule MiParserTest do
   end
 
   test "Throw statements are parsed" do
-    {:ok, ast} = lex_and_parse("""
-    (throw (new (Error "oh no!")))
-    (throw 'panic)
-    """)
+    tokens =
+      [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+       %Token{line: 1, pos: 2, type: :throw, value: "throw"},
+       %Token{line: 1, pos: 8, type: :oparen, value: "("},
+       %Token{line: 1, pos: 9, type: :new, value: "new"},
+       %Token{line: 1, pos: 13, type: :oparen, value: "("},
+       %Token{line: 1, pos: 14, type: :identifier, value: "Error"},
+       %Token{line: 1, pos: 20, type: :string, value: "oh no!"},
+       %Token{line: 1, pos: 26, type: :cparen, value: ")"},
+       %Token{line: 1, pos: 27, type: :cparen, value: ")"},
+       %Token{line: 1, pos: 28, type: :cparen, value: ")"},
+       %Token{line: 2, pos: 5, type: :oparen, value: "("},
+       %Token{line: 2, pos: 6, type: :throw, value: "throw"},
+       %Token{line: 2, pos: 12, type: :quote, value: "'"},
+       %Token{line: 2, pos: 13, type: :identifier, value: "panic"},
+       %Token{line: 2, pos: 18, type: :cparen, value: ")"}]
+
+    {:ok, ast} = Parser.parse(tokens)
 
     assert [
       %AST.Throw{
@@ -363,19 +690,44 @@ defmodule MiParserTest do
   end
 
   test "Try catch statements are parsed" do
-    {:ok, ast} = lex_and_parse("""
-    (try
-      (throw (new (Error "oops")))
-    (catch e)
-      (console/log e)
-    finally
-      (console/log "Done"))
+    tokens =
+      [%Token{line: 1, pos: 1, type: :oparen, value: "("},
+       %Token{line: 1, pos: 2, type: :try, value: "try"},
+       %Token{line: 2, pos: 7, type: :oparen, value: "("},
+       %Token{line: 2, pos: 8, type: :throw, value: "throw"},
+       %Token{line: 2, pos: 14, type: :oparen, value: "("},
+       %Token{line: 2, pos: 15, type: :new, value: "new"},
+       %Token{line: 2, pos: 19, type: :oparen, value: "("},
+       %Token{line: 2, pos: 20, type: :identifier, value: "Error"},
+       %Token{line: 2, pos: 26, type: :string, value: "oops"},
+       %Token{line: 2, pos: 30, type: :cparen, value: ")"},
+       %Token{line: 2, pos: 31, type: :cparen, value: ")"},
+       %Token{line: 2, pos: 32, type: :cparen, value: ")"},
+       %Token{line: 3, pos: 5, type: :oparen, value: "("},
+       %Token{line: 3, pos: 6, type: :catch, value: "catch"},
+       %Token{line: 3, pos: 12, type: :identifier, value: "e"},
+       %Token{line: 3, pos: 13, type: :cparen, value: ")"},
+       %Token{line: 4, pos: 7, type: :oparen, value: "("},
+       %Token{line: 4, pos: 8, type: :identifier, value: "console/log"},
+       %Token{line: 4, pos: 20, type: :identifier, value: "e"},
+       %Token{line: 4, pos: 21, type: :cparen, value: ")"},
+       %Token{line: 5, pos: 5, type: :finally, value: "finally"},
+       %Token{line: 6, pos: 7, type: :oparen, value: "("},
+       %Token{line: 6, pos: 8, type: :identifier, value: "console/log"},
+       %Token{line: 6, pos: 20, type: :string, value: "Done"},
+       %Token{line: 6, pos: 24, type: :cparen, value: ")"},
+       %Token{line: 6, pos: 25, type: :cparen, value: ")"},
+       %Token{line: 8, pos: 5, type: :oparen, value: "("},
+       %Token{line: 8, pos: 6, type: :try, value: "try"},
+       %Token{line: 9, pos: 7, type: :identifier, value: "a"},
+       %Token{line: 10, pos: 5, type: :oparen, value: "("},
+       %Token{line: 10, pos: 6, type: :catch, value: "catch"},
+       %Token{line: 10, pos: 12, type: :identifier, value: "e"},
+       %Token{line: 10, pos: 13, type: :cparen, value: ")"},
+       %Token{line: 11, pos: 7, type: :identifier, value: "b"},
+       %Token{line: 11, pos: 8, type: :cparen, value: ")"}]
 
-    (try
-      a
-    (catch e)
-      b)
-    """)
+    {:ok, ast} = Parser.parse(tokens)
 
     assert [
       %AST.Try{
