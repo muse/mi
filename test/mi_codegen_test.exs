@@ -10,22 +10,53 @@ defmodule MiCodegenTest do
 
   describe "&Codegen.generate/1" do
     test "Lists are generated" do
-      {:ok, program} = lex_parse_gen("'(1 2 'test ww)")
+      ast = [
+        %Mi.AST.List{
+          items: [%Mi.AST.Number{value: "1"}, %Mi.AST.Number{value: "2"},
+                  %Mi.AST.Symbol{name: "test"}, %Mi.AST.Identifier{name: "ww"}]
+        }
+      ]
+
+      {:ok, program} = Codegen.generate(ast)
 
       assert program === ~s([1, 2, "test", ww];)
     end
 
     test "Expressions are generated" do
-      {:ok, program} = lex_parse_gen("(+ 1 2 3 (* 4 5))")
+      ast = [
+        %Mi.AST.Expression{
+          operator: :+,
+          arguments: [
+            %Mi.AST.Number{value: "1"},
+            %Mi.AST.Number{value: "2"},
+            %Mi.AST.Number{value: "3"},
+            %Mi.AST.Expression{
+              operator: :*,
+              arguments: [%Mi.AST.Number{value: "4"},
+                          %Mi.AST.Number{value: "5"}]}]
+        }
+      ]
+
+      {:ok, program} = Codegen.generate(ast)
 
       assert program === "(1 + 2 + 3 + (4 * 5));"
     end
 
     test "Define is generated" do
-      {:ok, program} = lex_parse_gen("""
-      (define x (* 8 8))
-      (define* y 'default)
-      """)
+      ast = [
+        %Mi.AST.Variable{
+          default?: false, name: "x",
+          value: %Mi.AST.Expression{
+            operator: :*,
+            arguments: [%Mi.AST.Number{value: "8"},
+                        %Mi.AST.Number{value: "8"}]
+          }
+        },
+        %Mi.AST.Variable{default?: true, name: "y",
+                         value: %Mi.AST.Symbol{name: "default"}}
+      ]
+
+      {:ok, program} = Codegen.generate(ast)
 
       assert program === "var x = (8 * 8);var y = y || \"default\";"
     end

@@ -1,7 +1,7 @@
 defmodule Mi do
   import Mi.Utils
 
-  alias Mi.{Parser, Lexer}
+  alias Mi.{Parser, Lexer, Codegen}
 
   def main(_) do
     input =
@@ -22,8 +22,16 @@ defmodule Mi do
         {:error, reason} -> fatal_error("parser", reason)
       end
 
+    code =
+      case Codegen.generate(ast) do
+        {:ok, code}      -> code
+        {:error, reason} -> fatal_error("codegen", reason)
+      end
+
     IO.inspect tokens
     IO.inspect '# ======= #'
     IO.inspect ast
+    IO.inspect '# ======= #'
+    IO.inspect code
   end
 end

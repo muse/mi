@@ -58,14 +58,14 @@ defmodule Mi.Codegen do
 
   @spec generate_expression(AST.Expression.t, [String.t]) :: String.t
   defp generate_expression(expr, generated_items \\ [])
-  defp generate_expression(%AST.Expression{arguments: []} = expr, generated_args) do
-    expression = generated_args |> Enum.reverse |> Enum.join(" #{expr.operator} ")
-    "(#{expression})"
-  end
   defp generate_expression(%AST.Expression{arguments: [], operator: :.} = expr, generated_args) do
     # No parentheses and spaces around operator `.'
     expression = generated_args |> Enum.reverse |> Enum.join("#{expr.operator}")
     "#{expression}"
+  end
+  defp generate_expression(%AST.Expression{arguments: []} = expr, generated_args) do
+    expression = generated_args |> Enum.reverse |> Enum.join(" #{expr.operator} ")
+    "(#{expression})"
   end
   defp generate_expression(%AST.Expression{arguments: [arg | rest]} = expr, generated_args) do
     result = generate_node(arg)
