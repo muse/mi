@@ -17,7 +17,7 @@ defmodule Mi do
       end
 
     ast =
-      case Parser.parse(input) do
+      case Parser.parse(tokens) do
         {:ok, ast}       -> ast
         {:error, reason} -> fatal_error("parser", reason)
       end
