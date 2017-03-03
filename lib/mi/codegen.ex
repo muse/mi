@@ -23,6 +23,7 @@ defmodule Mi.Codegen do
   @spec generate_top_level(AST.tnode | [AST.tnode]) :: String.t
   defp generate_top_level([func | args]) do
     # A list in the AST means a function call
+    # TODO: make AST type for function calls instead of using a list
     generate_func_call(func, args) <> ";"
   end
   defp generate_top_level(node) do
@@ -50,6 +51,7 @@ defmodule Mi.Codegen do
       %AST.Identifier{} -> String.replace(node.name, "/", ".")
       %AST.Bool{}       -> node.value
       %AST.Nil{}        -> "null"
+      [func | args]     -> generate_func_call(func, args)
     end
   end
 
@@ -146,7 +148,8 @@ defmodule Mi.Codegen do
 
   @spec generate_use(AST.Use.t) :: String.t
   defp generate_use(%AST.Use{} = use_stmt) do
-    "var #{use_stmt.name} = require(\"#{use_stmt.module}\");"
+    module_name = generate_node(use_stmt.module)
+    "var #{use_stmt.name} = require(#{module_name});"
   end
 
   @spec generate_func_call(AST.tnode, [AST.tnode]) :: String.t

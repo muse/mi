@@ -221,8 +221,8 @@ defmodule MiParserTest do
       {:ok, ast} = Parser.parse(tokens)
 
       assert [
-        %AST.Use{module: "http", name: "http"},
-        %AST.Use{module: "http", name: "myhttp"}
+        %AST.Use{name: "http", module: %AST.String{value: "http"}},
+        %AST.Use{name: "http", module: %AST.Symbol{name: "myhttp"}}
       ] === ast
     end
 
@@ -231,15 +231,6 @@ defmodule MiParserTest do
         [%Token{line: 1, pos: 1, type: :oparen, value: "("},
          %Token{line: 1, pos: 2, type: :use, value: "use"},
          %Token{line: 1, pos: 5, type: :cparen, value: ")"}]
-      assert {:error, _} = Parser.parse(tokens)
-
-      tokens =
-        [%Token{line: 1, pos: 1, type: :oparen, value: "("},
-         %Token{line: 1, pos: 2, type: :use, value: "use"},
-         %Token{line: 1, pos: 5, type: :*, value: "*"},
-         %Token{line: 1, pos: 7, type: :string, value: "http"},
-         %Token{line: 1, pos: 12, type: :identifier, value: "myhttp"},
-         %Token{line: 1, pos: 18, type: :cparen, value: ")"}]
       assert {:error, _} = Parser.parse(tokens)
 
       tokens =

@@ -109,7 +109,7 @@ defmodule Mi.AST do
 
     @type t :: %__MODULE__{
       module: String.t,
-      name: String.t
+      name: AST.tnode
     }
   end
 

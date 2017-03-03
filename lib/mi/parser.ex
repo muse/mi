@@ -106,8 +106,7 @@ defmodule Mi.Parser do
 
   @spec parse_atom([Token.t]) :: tree_result | node_result
   defp parse_atom([%Token{type: :quote}, token | rest] = tokens) do
-    # Quoted atoms sometimes have a special case, otherwise it's just
-    # ignored
+    # Quoted atoms sometimes have a special case, otherwise it's just ignored
     case token.type do
       :oparen     -> parse_literal_list(tokens)
       :identifier -> {:ok, rest, %AST.Symbol{name: token.value}}
@@ -267,17 +266,16 @@ defmodule Mi.Parser do
 
   @spec parse_use([Token.t]) :: node_result
   defp parse_use([%Token{type: :*} | rest]) do
-    # TODO: improve error messages here. currently throws errors about
-    #       unexpected )
-    with {:ok, rest, module} <- expect(rest, :string),
-         {:ok, rest, %AST.Symbol{name: name}} <- parse_sexpr(rest),
+    with {:ok, rest, name} <- expect(rest, :string),
+         {:ok, rest, module} <- parse_sexpr(rest),
          {:ok, rest, _} <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Use{module: module.value, name: name}}
+      do: {:ok, rest, %AST.Use{module: module, name: name.value}}
   end
   defp parse_use(tokens) do
     with {:ok, rest, module} <- expect(tokens, :string),
          {:ok, rest, _}      <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Use{module: module.value, name: module.value}}
+      do: {:ok, rest, %AST.Use{name: module.value,
+                               module: %AST.String{value: module.value}}}
   end
 
   @spec parse_if([Token.t]) :: node_result
@@ -404,7 +402,8 @@ defmodule Mi.Parser do
         [%Token{type: :finally} | rest] ->
           with {:ok, rest, finally_body} <- parse_sexpr(rest),
                {:ok, rest, _}            <- expect(rest, ")"),
-            do: {:ok, rest, %AST.Try{body: body, catch_expression: catch_expression,
+            do: {:ok, rest, %AST.Try{body: body,
+                                     catch_expression: catch_expression,
                                      catch_body: catch_body,
                                      finally_body: finally_body}}
         [token | _] ->
