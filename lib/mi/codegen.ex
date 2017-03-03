@@ -20,9 +20,18 @@ defmodule Mi.Codegen do
     do_generate(%{codegen | ast: rest, program: [result | codegen.program]})
   end
 
-  @spec generate_top_level(AST.tnode) :: String.t
+  @spec generate_top_level(AST.tnode | [AST.tnode]) :: String.t
+  defp generate_top_level([func | args]) do
+    # A list in the AST means a function call
+    generate_func_call(func, args) <> ";"
+  end
   defp generate_top_level(node) do
-    generate_node(node) <> ";"
+    result = generate_node(node)
+
+    # Don't insert semicolon when generating statements
+    if node.statement?,
+      do: result,
+      else: result <> ";"
   end
 
   @spec generate_node(AST.tnode) :: String.t
@@ -31,8 +40,8 @@ defmodule Mi.Codegen do
       %AST.List{}       -> generate_list(node)
       %AST.Expression{} -> generate_expression(node)
       %AST.Lambda{}     -> generate_lambda(node)
-      %AST.Variable{}   -> generate_variable(node)
-      %AST.Function{}   -> generate_function(node)
+      %AST.Define{}     -> generate_variable(node)
+      %AST.Defun{}      -> generate_function(node)
       %AST.If{}         -> generate_if(node)
       %AST.Use{}        -> generate_use(node)
       %AST.Number{}     -> node.value
@@ -41,7 +50,6 @@ defmodule Mi.Codegen do
       %AST.Identifier{} -> String.replace(node.name, "/", ".")
       %AST.Bool{}       -> node.value
       %AST.Nil{}        -> "null"
-      [func | args]     -> generate_func_call(func, args)
     end
   end
 
@@ -96,19 +104,19 @@ defmodule Mi.Codegen do
     generate_body(rest, [result | generated_nodes])
   end
 
-  @spec generate_variable(AST.Variable.t) :: String.t
-  defp generate_variable(%AST.Variable{} = variable) do
+  @spec generate_variable(AST.Define.t) :: String.t
+  defp generate_variable(%AST.Define{} = variable) do
     value = generate_node(variable.value)
     expression =
       if variable.default?,
         do: "#{variable.name} || #{value}",
         else: value
 
-    "var #{variable.name} = #{expression}"
+    "var #{variable.name} = #{expression};"
   end
 
-  @spec generate_function(AST.Function.t) :: String.t
-  defp generate_function(%AST.Function{} = function) do
+  @spec generate_function(AST.Defun.t) :: String.t
+  defp generate_function(%AST.Defun{} = function) do
     params = Enum.join(function.parameters, ", ")
     body = generate_body(function.body)
 
@@ -138,7 +146,7 @@ defmodule Mi.Codegen do
 
   @spec generate_use(AST.Use.t) :: String.t
   defp generate_use(%AST.Use{} = use_stmt) do
-    "var #{use_stmt.name} = require(\"#{use_stmt.module}\")"
+    "var #{use_stmt.name} = require(\"#{use_stmt.module}\");"
   end
 
   @spec generate_func_call(AST.tnode, [AST.tnode]) :: String.t

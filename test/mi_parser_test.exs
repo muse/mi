@@ -194,13 +194,13 @@ defmodule MiParserTest do
       {:ok, ast} = Parser.parse(tokens)
 
       assert [
-        %AST.Variable{name: "a", value: %AST.Number{value: "5"}, default?: false},
+        %AST.Define{name: "a", value: %AST.Number{value: "5"}, default?: false},
         [
-          %AST.Variable{name: "a", value: %AST.Number{value: "5"}, default?: false},
-          %AST.Variable{name: "b", value: %AST.Number{value: "6"}, default?: false},
-          %AST.Variable{name: "c", value: %AST.Number{value: "7"}, default?: false},
+          %AST.Define{name: "a", value: %AST.Number{value: "5"}, default?: false},
+          %AST.Define{name: "b", value: %AST.Number{value: "6"}, default?: false},
+          %AST.Define{name: "c", value: %AST.Number{value: "7"}, default?: false},
         ],
-        %AST.Variable{name: "b", value: %AST.Number{value: "6"}, default?: true},
+        %AST.Define{name: "b", value: %AST.Number{value: "6"}, default?: true},
       ] === ast
     end
 
@@ -377,7 +377,7 @@ defmodule MiParserTest do
       {:ok, ast} = Parser.parse(tokens)
 
       assert [
-        %AST.Function{
+        %AST.Defun{
           name: "factorial",
           parameters: ["n"],
           body: [%AST.If{
@@ -399,11 +399,11 @@ defmodule MiParserTest do
             }
           }]
         },
-        %AST.Function{
+        %AST.Defun{
           name: "is-5",
           parameters: ["n"],
           body: [
-            %AST.Variable{name: "x", value: %AST.Number{value: "5"},
+            %AST.Define{name: "x", value: %AST.Number{value: "5"},
                           default?: false},
             %AST.Expression{operator: :eq,
                             arguments: [%AST.Identifier{name: "n"},
@@ -592,7 +592,7 @@ defmodule MiParserTest do
 
       assert [
         %AST.For{
-          initialization: %AST.Variable{
+          initialization: %AST.Define{
             name: "i",
             value: %AST.Number{value: "0"},
             default?: false

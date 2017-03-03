@@ -1,5 +1,5 @@
 defmodule MiCodegenTest do
-  alias Mi.{Lexer, Parser, Codegen}
+  alias Mi.{AST, Lexer, Parser, Codegen}
   use   ExUnit.Case
 
   defp lex_parse_gen(expr) do
@@ -11,9 +11,9 @@ defmodule MiCodegenTest do
   describe "&Codegen.generate/1" do
     test "Lists are generated" do
       ast = [
-        %Mi.AST.List{
-          items: [%Mi.AST.Number{value: "1"}, %Mi.AST.Number{value: "2"},
-                  %Mi.AST.Symbol{name: "test"}, %Mi.AST.Identifier{name: "ww"}]
+        %AST.List{
+          items: [%AST.Number{value: "1"}, %AST.Number{value: "2"},
+                  %AST.Symbol{name: "test"}, %AST.Identifier{name: "ww"}]
         }
       ]
 
@@ -24,16 +24,18 @@ defmodule MiCodegenTest do
 
     test "Expressions are generated" do
       ast = [
-        %Mi.AST.Expression{
+        %AST.Expression{
           operator: :+,
           arguments: [
-            %Mi.AST.Number{value: "1"},
-            %Mi.AST.Number{value: "2"},
-            %Mi.AST.Number{value: "3"},
-            %Mi.AST.Expression{
+            %AST.Number{value: "1"},
+            %AST.Number{value: "2"},
+            %AST.Number{value: "3"},
+            %AST.Expression{
               operator: :*,
-              arguments: [%Mi.AST.Number{value: "4"},
-                          %Mi.AST.Number{value: "5"}]}]
+              arguments: [%AST.Number{value: "4"},
+                          %AST.Number{value: "5"}]
+            }
+          ]
         }
       ]
 
@@ -44,16 +46,16 @@ defmodule MiCodegenTest do
 
     test "Define is generated" do
       ast = [
-        %Mi.AST.Variable{
+        %AST.Define{
           default?: false, name: "x",
-          value: %Mi.AST.Expression{
+          value: %AST.Expression{
             operator: :*,
-            arguments: [%Mi.AST.Number{value: "8"},
-                        %Mi.AST.Number{value: "8"}]
+            arguments: [%AST.Number{value: "8"},
+                        %AST.Number{value: "8"}]
           }
         },
-        %Mi.AST.Variable{default?: true, name: "y",
-                         value: %Mi.AST.Symbol{name: "default"}}
+        %AST.Define{default?: true, name: "y",
+                    value: %AST.Symbol{name: "default"}}
       ]
 
       {:ok, program} = Codegen.generate(ast)

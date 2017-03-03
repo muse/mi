@@ -260,7 +260,7 @@ defmodule Mi.Parser do
   defp do_parse_define(tokens, default?, nodes) do
     with {:ok, rest, name}  <- expect(tokens, :identifier),
          {:ok, rest, value} <- parse_sexpr(rest) do
-      node = %AST.Variable{name: name.value, value: value, default?: default?}
+      node = %AST.Define{name: name.value, value: value, default?: default?}
       do_parse_define(rest, default?, [node | nodes])
     end
   end
@@ -312,8 +312,8 @@ defmodule Mi.Parser do
          {:ok, rest, parameters} <- parse_arg_list(rest),
          {:ok, rest, body}       <- parse_body(rest),
          {:ok, rest, _}          <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Function{name: name.value, parameters: parameters,
-                                    body: body}}
+      do: {:ok, rest, %AST.Defun{name: name.value, parameters: parameters,
+                                 body: body}}
   end
 
   @spec parse_object([Token.t], [{AST.tnode, AST.tnode}]) :: node_result
