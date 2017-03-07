@@ -8,6 +8,8 @@ defmodule Mi.Codegen do
     ast: AST.t
   }
 
+  @renamed_operators %{not: "!", and: "&&", or: "||", eq: "==="}
+
   @spec generate(AST.t) :: String.t
   def generate(ast), do: do_generate(%Codegen{ast: ast})
 
@@ -35,6 +37,9 @@ defmodule Mi.Codegen do
       else: result <> ";"
   end
 
+  @spec identifier(String.t) :: String.t
+  defp identifier(string), do: String.replace(string, "/", ".")
+
   @spec generate_node(AST.tnode) :: String.t
   defp generate_node(node) do
     case node do
@@ -48,38 +53,48 @@ defmodule Mi.Codegen do
       %AST.Number{}     -> node.value
       %AST.String{}     -> ~s("#{node.value}")
       %AST.Symbol{}     -> ~s("#{node.name}")
-      %AST.Identifier{} -> String.replace(node.name, "/", ".")
+      %AST.Identifier{} -> identifier(node.name)
       %AST.Bool{}       -> node.value
       %AST.Nil{}        -> "null"
       [func | args]     -> generate_func_call(func, args)
     end
   end
 
-  @spec generate_list(AST.List.t, [String.t]) :: String.t
-  defp generate_list(list, generated_items \\ [])
-  defp generate_list(%AST.List{items: []}, generated_items) do
-    items = generated_items |> Enum.reverse |> Enum.join(", ")
+  @spec generate_list(AST.List.t) :: String.t
+  defp generate_list(%AST.List{items: items}) do
+    items = Enum.map(items, &generate_node/1) |> Enum.join(", ")
     "[#{items}]"
   end
-  defp generate_list(%AST.List{items: [item | rest]} = list, generated_items) do
-    result = generate_node(item)
-    generate_list(%{list | items: rest}, [result | generated_items])
-  end
 
-  @spec generate_expression(AST.Expression.t, [String.t]) :: String.t
-  defp generate_expression(expr, generated_items \\ [])
-  defp generate_expression(%AST.Expression{arguments: [], operator: :.} = expr, generated_args) do
-    # No parentheses and spaces around operator `.'
-    expression = generated_args |> Enum.reverse |> Enum.join("#{expr.operator}")
-    "#{expression}"
-  end
-  defp generate_expression(%AST.Expression{arguments: []} = expr, generated_args) do
-    expression = generated_args |> Enum.reverse |> Enum.join(" #{expr.operator} ")
-    "(#{expression})"
-  end
-  defp generate_expression(%AST.Expression{arguments: [arg | rest]} = expr, generated_args) do
-    result = generate_node(arg)
-    generate_expression(%{expr | arguments: rest}, [result | generated_args])
+  @spec generate_expression(AST.Expression.t) :: String.t
+  defp generate_expression(%AST.Expression{arguments: args, operator: operator}) do
+    # We renamed some operators, like `and instead of `&&'. This converts them
+    # back to their JavaScript equivalent.
+    operator = Map.get(@renamed_operators, operator, operator)
+
+    args = Enum.map(args, &generate_node/1)
+
+    case operator do
+      :"//" ->
+        [lhs, rhs] = args
+        "Math.floor(#{lhs} / #{rhs})"
+      :"**" ->
+        [lhs, rhs] = args
+        "Math.pow(#{lhs}, #{rhs})"
+      :. ->
+        # No parentheses and spaces around operator `.'
+        expression = args |> Enum.join("#{operator}")
+        "#{expression}"
+      _ ->
+        if length(args) > 1 do
+          expression = args |> Enum.join(" #{operator} ")
+          "(#{expression})"
+        else
+          # Unary operators
+          [arg] = args
+          "#{operator}(#{arg})"
+        end
+    end
   end
 
   @spec generate_lambda(AST.Lambda.t) :: String.t
@@ -96,14 +111,9 @@ defmodule Mi.Codegen do
     end
   end
 
-  @spec generate_body([AST.tnode], [String.t]) :: String.t
-  defp generate_body(nodes, generated_nodes \\ [])
-  defp generate_body([], generated_nodes) do
-    generated_nodes |> Enum.reverse
-  end
-  defp generate_body([node | rest], generated_nodes) do
-    result = generate_top_level(node)
-    generate_body(rest, [result | generated_nodes])
+  @spec generate_body([AST.tnode]) :: String.t
+  defp generate_body(nodes) do
+    Enum.map(nodes, &generate_top_level/1)
   end
 
   @spec generate_variable(AST.Define.t) :: String.t

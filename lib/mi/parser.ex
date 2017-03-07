@@ -16,8 +16,7 @@ defmodule Mi.Parser do
   @type tree_result :: {[Token.t], AST.t } | {:error, String.t}
   @type node_result :: {[Token.t], AST.tnode} | {:error, String.t}
 
-  @unary_operators [:not, :delete, :typeof, :void, :new, :++, :--,
-                    :bnot, :-]
+  @unary_operators [:not, :delete, :typeof, :void, :new, :++, :--, :"~", :-]
 
   @multi_arity_operators [:and, :or, :eq, :instanceof, :in, :"//", :"**", :"<<",
                           :>>>, :">>", :<=, :>=, :-, :+, :/, :*, :%, :<, :>, :^,
