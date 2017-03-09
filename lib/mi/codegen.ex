@@ -23,6 +23,7 @@ defmodule Mi.Codegen do
   end
 
   @spec generate_top_level(AST.tnode | [AST.tnode]) :: String.t
+  defp generate_top_level([]), do: ""
   defp generate_top_level([func | args]) do
     # A list in the AST means a function call
     # TODO: make AST type for function calls instead of using a list
@@ -41,6 +42,7 @@ defmodule Mi.Codegen do
   defp identifier(string), do: String.replace(string, "/", ".")
 
   @spec generate_node(AST.tnode) :: String.t
+  defp generate_node([]), do: ""
   defp generate_node(node) do
     case node do
       %AST.List{}       -> generate_list(node)
@@ -68,7 +70,7 @@ defmodule Mi.Codegen do
 
   @spec generate_expression(AST.Expression.t) :: String.t
   defp generate_expression(%AST.Expression{arguments: args, operator: operator}) do
-    # We renamed some operators, like `and instead of `&&'. This converts them
+    # We renamed some operators, i.e `and' instead of `&&'. This converts them
     # back to their JavaScript equivalent.
     operator = Map.get(@renamed_operators, operator, operator)
 
@@ -112,8 +114,11 @@ defmodule Mi.Codegen do
   end
 
   @spec generate_body([AST.tnode]) :: String.t
-  defp generate_body(nodes) do
+  defp generate_body(nodes) when is_list(nodes) do
     Enum.map(nodes, &generate_top_level/1)
+  end
+  defp generate_body(node) do
+    generate_top_level(node)
   end
 
   @spec generate_variable(AST.Define.t) :: String.t
