@@ -58,6 +58,8 @@ defmodule Mi.Codegen do
       %AST.Identifier{} -> identifier(node.name)
       %AST.Bool{}       -> node.value
       %AST.Nil{}        -> "null"
+      %AST.Object{}     -> generate_object(node)
+      %AST.Return{}     -> generate_return(node)
       [func | args]     -> generate_func_call(func, args)
     end
   end
@@ -172,5 +174,23 @@ defmodule Mi.Codegen do
     name = generate_node(func)
     args = Enum.map(args, &generate_node/1) |> Enum.join(", ")
     "#{name}(#{args})"
+  end
+
+  @spec generate_object(AST.tnode) :: String.t
+  defp generate_object(%AST.Object{} = node) do
+    fields = Enum.map(node.value, fn field ->
+      {key_node, value_node} = field
+      key = generate_node(key_node)
+      field = generate_node(value_node)
+      "#{key}: #{field}"
+    end)
+    object = Enum.join(fields, ", ")
+    "{#{object}}"
+  end
+
+  @spec generate_return(AST.tnode) :: String.t
+  defp generate_return(%AST.Return{} = node) do
+    expression = generate_node(node.value)
+    "return #{expression};"
   end
 end
