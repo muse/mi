@@ -39,7 +39,14 @@ defmodule Mi.Codegen do
   end
 
   @spec identifier(String.t) :: String.t
-  defp identifier(string), do: String.replace(string, "/", ".")
+  defp identifier(string) do
+    [first | rest] = String.replace(string, "/", ".") |> String.split("-")
+    if rest !== [] do
+      first <> (rest |> Enum.map(&String.capitalize/1) |> Enum.join)
+    else
+      first
+    end
+  end
 
   @spec generate_node(AST.tnode) :: String.t
   defp generate_node([]), do: ""
@@ -60,6 +67,7 @@ defmodule Mi.Codegen do
       %AST.Nil{}        -> "null"
       %AST.Object{}     -> generate_object(node)
       %AST.Return{}     -> generate_return(node)
+      %AST.For{}        -> generate_for(node)
       [func | args]     -> generate_func_call(func, args)
     end
   end
@@ -103,15 +111,16 @@ defmodule Mi.Codegen do
 
   @spec generate_lambda(AST.Lambda.t) :: String.t
   defp generate_lambda(%AST.Lambda{} = lambda) do
+    name = if lambda.name, do: identifier(lambda.name), else: ""
     params = Enum.join(lambda.parameters, ", ")
     body = generate_body(lambda.body)
 
     if length(lambda.body) > 1 do
-      "function #{lambda.name}(#{params}) {
+      "function #{name}(#{params}) {
       #{body}
       }"
     else
-      "function #{lambda.name}(#{params}) { #{body} }"
+      "function #{name}(#{params}) { #{body} }"
     end
   end
 
@@ -125,21 +134,23 @@ defmodule Mi.Codegen do
 
   @spec generate_variable(AST.Define.t) :: String.t
   defp generate_variable(%AST.Define{} = variable) do
+    name = identifier(variable.name)
     value = generate_node(variable.value)
     expression =
       if variable.default?,
-        do: "#{variable.name} || #{value}",
+        do: "#{name} || #{value}",
         else: value
 
-    "var #{variable.name} = #{expression};"
+    "var #{name} = #{expression};"
   end
 
   @spec generate_function(AST.Defun.t) :: String.t
   defp generate_function(%AST.Defun{} = function) do
+    name = identifier(function.name)
     params = Enum.join(function.parameters, ", ")
     body = generate_body(function.body)
 
-    "function #{function.name}(#{params}) {
+    "function #{name}(#{params}) {
 #{body}
 }"
   end
@@ -189,8 +200,17 @@ defmodule Mi.Codegen do
   end
 
   @spec generate_return(AST.tnode) :: String.t
+  defp generate_return(%AST.Return{value: nil}) do
+    "return;"
+  end
   defp generate_return(%AST.Return{} = node) do
     expression = generate_node(node.value)
     "return #{expression};"
+  end
+
+  @spec generate_for(AST.tnode) :: String.t
+  defp generate_for(%AST.For{} = node) do
+    body = generate_body(node.body)
+    "#{body}"
   end
 end

@@ -86,8 +86,6 @@ defmodule MiCodegenTest do
       {:ok, program} = lex_parse_gen("""
       (use* "http" 'myhttp)
       """)
-
-      IO.puts program
     end
   end
 end

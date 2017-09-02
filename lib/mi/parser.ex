@@ -250,10 +250,12 @@ defmodule Mi.Parser do
   @spec do_parse_define([Token.t], boolean, []) :: node_result | tree_result
   defp do_parse_define(tokens, default?, nodes \\ [])
   defp do_parse_define([%Token{type: :cparen} | rest], _, [node]) do
-    {:ok, rest, node} # Single define, don't return a list
+    # Single declaration
+    {:ok, rest, node}
   end
   defp do_parse_define([%Token{type: :cparen} | rest], _, nodes) do
-    {:ok, rest, nodes |> Enum.reverse |> List.flatten }
+    # Multiple variable declarations in one
+    {:ok, rest, %AST.Defines{values: nodes |> Enum.reverse |> List.flatten}}
   end
   defp do_parse_define(tokens, default?, nodes) do
     with {:ok, rest, name}  <- expect(tokens, :identifier),

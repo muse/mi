@@ -16,11 +16,20 @@ defmodule Mi do
         {:error, reason} -> fatal_error("lexer", reason)
       end
 
+    IO.puts 'TOKENS'
+    # IO.inspect tokens
+    IO.inspect '# ======= #'
+
+
     ast =
       case Parser.parse(tokens) do
         {:ok, ast}       -> ast
         {:error, reason} -> fatal_error("parser", reason)
       end
+
+    IO.puts 'AST'
+    # IO.inspect ast
+    IO.inspect '# ======= #'
 
     code =
       case Codegen.generate(ast) do
@@ -28,10 +37,7 @@ defmodule Mi do
         {:error, reason} -> fatal_error("codegen", reason)
       end
 
-    IO.inspect tokens
-    IO.inspect '# ======= #'
-    IO.inspect ast
-    IO.inspect '# ======= #'
-    IO.inspect code
+    IO.puts 'CODE'
+    IO.puts code
   end
 end

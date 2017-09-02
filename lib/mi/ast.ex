@@ -104,6 +104,15 @@ defmodule Mi.AST do
     }
   end
 
+  defmodule Defines do
+    @enforce_keys [:values]
+    defstruct [:values, statement?: true]
+
+    @type t :: %__MODULE__{
+      values: [AST.Define.t]
+    }
+  end
+
   defmodule Use do
     defstruct [:module, :name, statement?: true]
 

@@ -195,11 +195,13 @@ defmodule MiParserTest do
 
       assert [
         %AST.Define{name: "a", value: %AST.Number{value: "5"}, default?: false},
-        [
-          %AST.Define{name: "a", value: %AST.Number{value: "5"}, default?: false},
-          %AST.Define{name: "b", value: %AST.Number{value: "6"}, default?: false},
-          %AST.Define{name: "c", value: %AST.Number{value: "7"}, default?: false},
-        ],
+        %AST.Defines{
+          values: [
+            %AST.Define{name: "a", value: %AST.Number{value: "5"}, default?: false},
+            %AST.Define{name: "b", value: %AST.Number{value: "6"}, default?: false},
+            %AST.Define{name: "c", value: %AST.Number{value: "7"}, default?: false},
+          ]
+        },
         %AST.Define{name: "b", value: %AST.Number{value: "6"}, default?: true},
       ] === ast
     end
