@@ -16,8 +16,7 @@ defmodule Mi.Parser do
   @type tree_result :: {[Token.t], AST.t } | {:error, String.t}
   @type node_result :: {[Token.t], AST.tnode} | {:error, String.t}
 
-  @unary_operators [:not, :delete, :typeof, :void, :new, :++, :--,
-                    :bnot, :-]
+  @unary_operators [:not, :delete, :typeof, :void, :new, :++, :--, :"~", :-]
 
   @multi_arity_operators [:and, :or, :eq, :instanceof, :in, :"//", :"**", :"<<",
                           :>>>, :">>", :<=, :>=, :-, :+, :/, :*, :%, :<, :>, :^,
@@ -106,8 +105,7 @@ defmodule Mi.Parser do
 
   @spec parse_atom([Token.t]) :: tree_result | node_result
   defp parse_atom([%Token{type: :quote}, token | rest] = tokens) do
-    # Quoted atoms sometimes have a special case, otherwise it's just
-    # ignored
+    # Quoted atoms sometimes have a special case, otherwise it's just ignored
     case token.type do
       :oparen     -> parse_literal_list(tokens)
       :identifier -> {:ok, rest, %AST.Symbol{name: token.value}}
@@ -252,32 +250,33 @@ defmodule Mi.Parser do
   @spec do_parse_define([Token.t], boolean, []) :: node_result | tree_result
   defp do_parse_define(tokens, default?, nodes \\ [])
   defp do_parse_define([%Token{type: :cparen} | rest], _, [node]) do
-    {:ok, rest, node} # Single define, don't return a list
+    # Single declaration
+    {:ok, rest, node}
   end
   defp do_parse_define([%Token{type: :cparen} | rest], _, nodes) do
-    {:ok, rest, nodes |> Enum.reverse |> List.flatten }
+    # Multiple variable declarations in one
+    {:ok, rest, %AST.Defines{values: nodes |> Enum.reverse |> List.flatten}}
   end
   defp do_parse_define(tokens, default?, nodes) do
     with {:ok, rest, name}  <- expect(tokens, :identifier),
          {:ok, rest, value} <- parse_sexpr(rest) do
-      node = %AST.Variable{name: name.value, value: value, default?: default?}
+      node = %AST.Define{name: name.value, value: value, default?: default?}
       do_parse_define(rest, default?, [node | nodes])
     end
   end
 
   @spec parse_use([Token.t]) :: node_result
   defp parse_use([%Token{type: :*} | rest]) do
-    # TODO: improve error messages here. currently throws errors about
-    #       unexpected )
-    with {:ok, rest, module} <- expect(rest, :string),
-         {:ok, rest, %AST.Symbol{name: name}} <- parse_sexpr(rest),
+    with {:ok, rest, name} <- expect(rest, :string),
+         {:ok, rest, module} <- parse_sexpr(rest),
          {:ok, rest, _} <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Use{module: module.value, name: name}}
+      do: {:ok, rest, %AST.Use{module: module, name: name.value}}
   end
   defp parse_use(tokens) do
     with {:ok, rest, module} <- expect(tokens, :string),
          {:ok, rest, _}      <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Use{module: module.value, name: module.value}}
+      do: {:ok, rest, %AST.Use{name: module.value,
+                               module: %AST.String{value: module.value}}}
   end
 
   @spec parse_if([Token.t]) :: node_result
@@ -312,8 +311,8 @@ defmodule Mi.Parser do
          {:ok, rest, parameters} <- parse_arg_list(rest),
          {:ok, rest, body}       <- parse_body(rest),
          {:ok, rest, _}          <- expect(rest, ")"),
-      do: {:ok, rest, %AST.Function{name: name.value, parameters: parameters,
-                                    body: body}}
+      do: {:ok, rest, %AST.Defun{name: name.value, parameters: parameters,
+                                 body: body}}
   end
 
   @spec parse_object([Token.t], [{AST.tnode, AST.tnode}]) :: node_result
@@ -404,7 +403,8 @@ defmodule Mi.Parser do
         [%Token{type: :finally} | rest] ->
           with {:ok, rest, finally_body} <- parse_sexpr(rest),
                {:ok, rest, _}            <- expect(rest, ")"),
-            do: {:ok, rest, %AST.Try{body: body, catch_expression: catch_expression,
+            do: {:ok, rest, %AST.Try{body: body,
+                                     catch_expression: catch_expression,
                                      catch_body: catch_body,
                                      finally_body: finally_body}}
         [token | _] ->
